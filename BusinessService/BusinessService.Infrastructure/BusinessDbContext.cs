@@ -16,18 +16,7 @@ public class BusinessDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
-
-        modelBuilder.Entity<User>()
-            .HasMany(u => u.Validations)
-            .WithOne(v => v.User)
-            .HasForeignKey(v => v.UserId);
-
-        modelBuilder.Entity<Validation>()
-            .HasMany(v => v.Steps)
-            .WithOne(s => s.Validation)
-            .HasForeignKey(s => s.ValidationId);
+        // Apply all IEntityTypeConfiguration implementations in this assembly.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BusinessDbContext).Assembly);
     }
 }

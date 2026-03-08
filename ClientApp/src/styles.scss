@@ -1,0 +1,57 @@
+@use '@angular/material' as mat;
+
+html {
+	@include mat.theme((
+		color: mat.$cyan-palette,
+		typography: Roboto,
+		density: 0
+	));
+}
+
+html,
+body {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: Roboto, 'Helvetica Neue', sans-serif;
+	background: #f4f9fb;
+}
+
+.page-container {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 1rem;
+	padding: 1rem;
+	max-width: 960px;
+	margin: 0 auto;
+}
+
+.form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.col-span-2 {
+	grid-column: span 2;
+}
+
+.w-full {
+	width: 100%;
+}
+
+mat-form-field {
+	width: 100%;
+}
+
+@media (max-width: 768px) {
+	.form-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.col-span-2 {
+		grid-column: auto;
+	}
+}

@@ -9,9 +9,8 @@ namespace BusinessService.Api.Controllers;
 [ApiController]
 [ApiConventionType(typeof(PxDefaultApiConventions))]
 [Produces(MediaTypeNames.Application.Json)]
-[Route("api")]
+[Route("api/[controller]")]
 [SystemTextJsonFormatter]
-[ApiExplorerSettings(GroupName = "Nswag")]
 public sealed class BusinessServiceController : ControllerBase
 {
     private readonly IBusinessServiceManager manager;
@@ -21,32 +20,32 @@ public sealed class BusinessServiceController : ControllerBase
         this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
     }
 
-    [HttpPost("users/get-or-create")]
+    [HttpPost("users/GetOrCreateUser")]
     public Task<ActionResult<UserDto>> GetOrCreateUserAsync([FromBody] GetOrCreateUserRequest request, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.GetOrCreateUserAsync(request, cancellationToken));
     }
 
-    [HttpPost("validations")]
+    [HttpPost("Validations/CreateValidation")]
     public Task<ActionResult<ValidationDto>> CreateValidationAsync([FromBody] CreateValidationRequest request, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.CreateValidationAsync(request, cancellationToken));
     }
 
-    [HttpGet("validations")]
+    [HttpGet("Validations/GetValidationsForUser")]
     public Task<ActionResult<IReadOnlyList<ValidationListItemDto>>> GetValidationsForUserAsync([FromQuery] Guid userId, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.GetValidationsForUserAsync(userId, cancellationToken));
     }
 
-    [HttpGet("validations/{validationId:guid}")]
-    public Task<ActionResult<ValidationDetailsDto>> GetValidationDetailsAsync([FromRoute] Guid validationId, CancellationToken cancellationToken)
+    [HttpGet("Validations/GetValidationDetails")]
+    public Task<ActionResult<ValidationDetailsDto>> GetValidationDetailsAsync([FromQuery] Guid validationId, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.GetValidationDetailsAsync(validationId, cancellationToken));
     }
 
-    [HttpPost("validations/{validationId:guid}/validate")]
-    public Task<ActionResult<ValidateStepResponse>> ValidateStepAsync([FromRoute] Guid validationId, [FromBody] ValidateStepRequest request, CancellationToken cancellationToken)
+    [HttpPost("Validations/ValidateStep")]
+    public Task<ActionResult<ValidateStepResponse>> ValidateStepAsync([FromQuery] Guid validationId, [FromBody] ValidateStepRequest request, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.ValidateStepAsync(validationId, request, cancellationToken));
     }
