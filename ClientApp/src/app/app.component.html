@@ -1,0 +1,135 @@
+<mat-toolbar color="primary">KI‑Lügendetektor</mat-toolbar>
+
+<div class="page-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>User</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput [(ngModel)]="displayName" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" [(ngModel)]="email" />
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="onGetOrCreateUser()"
+        [disabled]="!displayName.trim() || !email.trim()"
+      >
+        User anlegen / laden
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  @if (currentUser) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Ausgangsfrage</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="col-span-2">
+            <mat-label>Originale Frage</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="question"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-span-2">
+            <mat-label>Antwort des Users</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="initialAnswer"></textarea>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+      <mat-card-actions>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="onCreateValidation()"
+          [disabled]="!question.trim() || !initialAnswer.trim()"
+        >
+          Validation starten
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+
+  @if (currentValidation) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Erste Nachfrage</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="col-span-2">
+            <mat-label>Nachfrage (Inquiry)</mat-label>
+            <input matInput [(ngModel)]="firstInquiry" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-span-2">
+            <mat-label>Antwort des Users (UserAnswer)</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="firstUserAnswer"></textarea>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+      <mat-card-actions>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="onFirstValidate()"
+          [disabled]="!firstInquiry.trim() || !firstUserAnswer.trim()"
+        >
+          Bewerten
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+
+  @if (lastScore !== undefined) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Score</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-progress-bar mode="determinate" [value]="lastScore * 100"></mat-progress-bar>
+        <p>Score: {{ lastScore | number:'1.2-2' }}</p>
+        <p>AI-Erklärung: {{ lastExplanation || '-' }}</p>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (steps.length > 0) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Verlauf</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-list>
+          @for (step of steps; track step.id) {
+            <mat-list-item>
+              <div matListItemTitle>{{ step.inquiry }}</div>
+              <div matListItemLine>Antwort: {{ step.userAnswer }}</div>
+              <div matListItemLine>Score: {{ step.score ?? '-' }}</div>
+              @if (step.isFinal) {
+                <div matListItemLine>Finaler Schritt</div>
+              }
+              @if (step.aiExplanation) {
+                <div matListItemLine>AI-Erklärung: {{ step.aiExplanation }}</div>
+              }
+            </mat-list-item>
+          }
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
