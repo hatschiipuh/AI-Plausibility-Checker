@@ -19,14 +19,19 @@ public sealed class AiModelResult
 
 public sealed class LLMClientMock : ILLMClient
 {
+    private int _callCount;
+
     public Task<AiModelResult> EvaluateStepAsync(AiScoreStepRequest request, CancellationToken cancellationToken)
     {
+        var currentCall = Interlocked.Increment(ref _callCount);
+        var isFinal = currentCall >= 3;
+
         var result = new AiModelResult
         {
-            Score = 0.5,
+            Score = isFinal ? 0.8 : 0.5,
             Explanation = $"Mock evaluation for validation {request.ValidationId}.",
-            IsFinal = false,
-            NextInquiry = "Gibt es noch einen weiteren Aspekt, den du ergänzen möchtest?"
+            IsFinal = isFinal,
+            NextInquiry = isFinal ? null : "Gibt es noch einen weiteren Aspekt, den du ergänzen möchtest?"
         };
 
         return Task.FromResult(result);
