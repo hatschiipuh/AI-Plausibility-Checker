@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -44,8 +45,13 @@ import {
 export class AppComponent {
   private readonly client = inject(BusinessServiceClient);
   private readonly dialog = inject(MatDialog);
+  private isInquiryDialogOpen = false;
 
-  currentUser?: UserDto;
+  private currentUserSubject = new BehaviorSubject<UserDto | undefined>(undefined);
+  currentUser$: Observable<UserDto | undefined> = this.currentUserSubject.asObservable();
+  get currentUser(): UserDto | undefined {
+    return this.currentUserSubject.value;
+  }
   currentValidation?: ValidationDto;
   validationDetails?: ValidationDetailsDto;
   steps: ValidationStepDto[] = [];
@@ -71,7 +77,7 @@ export class AppComponent {
     }
 
     this.client.getOrCreateUser(request).subscribe((user) => {
-      this.currentUser = user;
+      this.currentUserSubject.next(user);
     });
   }
 
@@ -101,7 +107,7 @@ export class AppComponent {
       this.firstInquiry = '';
       this.firstUserAnswer = '';
       if (validation.id) {
-        this.loadValidationDetails(validation.id);
+        this.validateStep(validation.id, this.question.trim(), this.initialAnswer.trim());
       }
     });
   }
@@ -117,24 +123,33 @@ export class AppComponent {
       return;
     }
 
+    this.validateStep(this.currentValidation.id, inquiry, userAnswer);
+  }
+
+  private validateStep(validationId: string, inquiry: string, userAnswer: string): void {
     const request = new ValidateStepRequest({
       inquiry,
       userAnswer
     });
 
-    this.client.validateStep(this.currentValidation.id, request).subscribe((response) => {
-      this.lastScore = response.score;
-      this.lastExplanation = response.aiExplanation;
-      this.nextInquiry = response.nextInquiry;
-      this.isCompleted = response.isCompleted ?? false;
-      if (this.currentValidation?.id) {
-        this.loadValidationDetails(this.currentValidation.id);
-      }
-
-      if (response.nextInquiry && !response.isCompleted) {
-        this.openInquiryDialog(response.nextInquiry);
-      }
+    this.client.validateStep(validationId, request).subscribe((response) => {
+      this.handleValidateStepResponse(response);
     });
+  }
+
+  private handleValidateStepResponse(response: { score?: number; aiExplanation?: string | undefined; nextInquiry?: string | undefined; isCompleted?: boolean }): void {
+    this.lastScore = response.score;
+    this.lastExplanation = response.aiExplanation;
+    this.nextInquiry = response.nextInquiry;
+    this.isCompleted = response.isCompleted ?? false;
+
+    if (this.currentValidation?.id) {
+      this.loadValidationDetails(this.currentValidation.id);
+    }
+
+    if (response.nextInquiry && !response.isCompleted) {
+      this.openInquiryDialog(response.nextInquiry);
+    }
   }
 
   loadValidationDetails(validationId: string): void {
@@ -142,13 +157,32 @@ export class AppComponent {
       this.validationDetails = details;
       this.steps = details.steps ?? [];
       this.isCompleted = details.isCompleted ?? false;
+
+      const openInquiry = this.getOpenInquiry(this.steps);
+      if (openInquiry && !this.isCompleted && !this.isInquiryDialogOpen) {
+        this.openInquiryDialog(openInquiry);
+      }
     });
+  }
+
+  private getOpenInquiry(steps: ValidationStepDto[]): string | undefined {
+    const latestUnansweredStep = [...steps]
+      .reverse()
+      .find((step) => !!step.inquiry?.trim() && !step.userAnswer?.trim());
+
+    return latestUnansweredStep?.inquiry?.trim();
   }
 
   openInquiryDialog(inquiry: string): void {
     if (!this.currentValidation?.id) {
       return;
     }
+
+    if (this.isInquiryDialogOpen) {
+      return;
+    }
+
+    this.isInquiryDialogOpen = true;
 
     const dialogRef = this.dialog.open<InquiryDialogComponent, { inquiry: string }, InquiryDialogResult>(
       InquiryDialogComponent,
@@ -160,28 +194,13 @@ export class AppComponent {
     );
 
     dialogRef.afterClosed().subscribe((result) => {
+      this.isInquiryDialogOpen = false;
+
       if (!result?.userAnswer || !this.currentValidation?.id) {
         return;
       }
 
-      const request = new ValidateStepRequest({
-        inquiry,
-        userAnswer: result.userAnswer
-      });
-
-      this.client.validateStep(this.currentValidation.id, request).subscribe((response) => {
-        this.lastScore = response.score;
-        this.lastExplanation = response.aiExplanation;
-        this.nextInquiry = response.nextInquiry;
-        this.isCompleted = response.isCompleted ?? false;
-        if (this.currentValidation?.id) {
-          this.loadValidationDetails(this.currentValidation.id);
-        }
-
-        if (response.nextInquiry && !response.isCompleted) {
-          this.openInquiryDialog(response.nextInquiry);
-        }
-      });
+      this.validateStep(this.currentValidation.id, inquiry, result.userAnswer);
     });
   }
 }

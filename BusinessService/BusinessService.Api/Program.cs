@@ -1,10 +1,11 @@
-using BusinessService.Api.Clients;
+using BusinessService.Api.Clients.ValidationScoringService;
 using BusinessService.Api.Managers;
 using BusinessService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -14,11 +15,22 @@ var connectionString = builder.Configuration.GetConnectionString("Business") ?? 
 builder.Services.AddDbContext<BusinessDbContext>(options =>
     options.UseSqlite(connectionString));
 
-builder.Services.AddHttpClient<IAiServiceClient, AiServiceClient>((sp, client) =>
+var validationScoringBaseUrl =
+    builder.Configuration["ValidationScoringService:BaseUrl"]
+    ?? throw new InvalidOperationException("Missing config: ValidationScoringService:BaseUrl");
+
+builder.Services.AddHttpClient("ValidationScoringService", client =>
 {
-    var configuration = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["AiService:BaseUrl"] ?? "http://localhost:5075";
-    client.BaseAddress = new Uri(baseUrl);
+    client.BaseAddress = new Uri(validationScoringBaseUrl);
+});
+
+builder.Services.AddScoped<BusinessService.Api.Clients.ValidationScoringService.IValidationScoringServiceClient>(sp =>
+{
+    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("ValidationScoringService");
+
+    return new ValidationScoringServiceClient(
+        httpClient);
 });
 
 builder.Services.AddScoped<IBusinessServiceManager, BusinessServiceManager>();

@@ -12,9 +12,8 @@ namespace ValidationScoringService.Api.Controllers;
 [ApiController]
 [ApiConventionType(typeof(PxDefaultApiConventions))]
 [Produces(MediaTypeNames.Application.Json)]
-[Route("api/ai")]
+[Route("api/[controller]")]
 [SystemTextJsonFormatter]
-[ApiExplorerSettings(GroupName = "Nswag")]
 public sealed class ValidationScoringController : ControllerBase
 {
     private readonly IValidationScoringManager manager;
