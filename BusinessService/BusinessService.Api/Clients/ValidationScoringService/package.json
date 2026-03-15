@@ -1,0 +1,11 @@
+{
+  "name": "validationscoringservice-client-generator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate-validationScoringService": "nswag run ValidationScoringService.json"
+  },
+  "devDependencies": {
+    "nswag": "latest"
+  }
+}

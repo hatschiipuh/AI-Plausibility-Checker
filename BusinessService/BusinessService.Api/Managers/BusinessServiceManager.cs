@@ -1,4 +1,5 @@
 using BusinessService.Api.Clients;
+using BusinessService.Api.Clients.ValidationScoringService;
 using BusinessService.Api.Contracts;
 using BusinessService.Domain;
 using BusinessService.Infrastructure;
@@ -9,12 +10,12 @@ namespace BusinessService.Api.Managers;
 public sealed class BusinessServiceManager : IBusinessServiceManager
 {
     private readonly BusinessDbContext dbContext;
-    private readonly IAiServiceClient aiServiceClient;
+    private readonly IValidationScoringServiceClient validationScoringServiceClient;
 
-    public BusinessServiceManager(BusinessDbContext dbContext, IAiServiceClient aiServiceClient)
+    public BusinessServiceManager(BusinessDbContext dbContext, IValidationScoringServiceClient validationScoringServiceClient)
     {
         this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        this.aiServiceClient = aiServiceClient ?? throw new ArgumentNullException(nameof(aiServiceClient));
+        this.validationScoringServiceClient = validationScoringServiceClient ?? throw new ArgumentNullException(nameof(validationScoringServiceClient));
     }
 
     public async Task<UserDto> GetOrCreateUserAsync(GetOrCreateUserRequest request, CancellationToken cancellationToken)
@@ -174,7 +175,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             UserAnswer = step.UserAnswer
         };
 
-        var aiResponse = await aiServiceClient.ScoreStepAsync(aiRequest, cancellationToken);
+        var aiResponse = await validationScoringServiceClient.ScoreStepAsync(aiRequest, cancellationToken);
 
         step.Score = aiResponse.Score;
         step.AiExplanation = aiResponse.AiExplanation;

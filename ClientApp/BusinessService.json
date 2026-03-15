@@ -59,7 +59,7 @@
       "convertConstructorInterfaceData": false,
       "importRequiredTypes": true,
       "useGetBaseUrlMethod": false,
-      "baseUrlTokenName": "API_BASE_URL",
+      "baseUrlTokenName": "API_BUSINESSSERVICECLIENT_BASE_URL",
       "queryNullValue": "",
       "useAbortSignal": false,
       "inlineNamedDictionaries": false,

@@ -10,8 +10,7 @@ namespace ValidationScoringService.Api.Controllers;
 
 [ApiController]
 [Produces(MediaTypeNames.Application.Json)]
-[Route("api/ai")]
-[ApiExplorerSettings(GroupName = "Nswag")]
+[Route("api/[controller]")]
 public sealed class ValidationScoringController : ControllerBase
 {
     private readonly IValidationScoringManager manager;

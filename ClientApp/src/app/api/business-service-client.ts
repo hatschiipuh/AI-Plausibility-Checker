@@ -12,7 +12,7 @@ import { Observable, throwError as _observableThrow, of as _observableOf } from 
 import { Injectable, Inject, Optional, InjectionToken } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angular/common/http';
 
-export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
+export const API_BUSINESSSERVICECLIENT_BASE_URL = new InjectionToken<string>('API_BUSINESSSERVICECLIENT_BASE_URL');
 
 export interface IBusinessServiceClient {
     /**
@@ -51,7 +51,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BUSINESSSERVICECLIENT_BASE_URL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
