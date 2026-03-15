@@ -8,7 +8,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IValidationScoringManager, ValidationScoringManager>();
-builder.Services.AddScoped<ILLMClient, LLMClientMock>();
+builder.Services.AddSingleton<ILLMClient, LLMClientMock>();
 
 var app = builder.Build();
 
