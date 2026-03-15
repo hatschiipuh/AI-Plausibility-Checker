@@ -1,4 +1,5 @@
 ﻿using BusinessService.Api.Clients;
+using BusinessService.Api.Clients.ValidationScoringService;
 using BusinessService.Api.Contracts;
 using BusinessService.Api.Managers;
 using BusinessService.Domain;
@@ -14,7 +15,7 @@ public sealed class BusinessServiceManagerTests
     public async Task GetOrCreateUserAsync_CreatesUser_WhenEmailIsNew()
     {
         await using var dbContext = CreateDbContext();
-        var manager = new BusinessServiceManager(dbContext, Mock.Of<IAiServiceClient>());
+        var manager = new BusinessServiceManager(dbContext, Mock.Of<IValidationScoringServiceClient>());
         var request = new GetOrCreateUserRequest
         {
             Email = " TestUser@Example.com ",
@@ -32,7 +33,7 @@ public sealed class BusinessServiceManagerTests
     public async Task CreateValidationAsync_ThrowsKeyNotFound_WhenUserDoesNotExist()
     {
         await using var dbContext = CreateDbContext();
-        var manager = new BusinessServiceManager(dbContext, Mock.Of<IAiServiceClient>());
+        var manager = new BusinessServiceManager(dbContext, Mock.Of<IValidationScoringServiceClient>());
         var request = new CreateValidationRequest
         {
             UserId = Guid.NewGuid(),
@@ -57,7 +58,7 @@ public sealed class BusinessServiceManagerTests
             NextInquiry = null
         };
 
-        var aiClient = new Mock<IAiServiceClient>();
+        var aiClient = new Mock<IValidationScoringServiceClient>();
         aiClient
             .Setup(client => client.ScoreStepAsync(It.IsAny<AiScoreStepRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(aiResponse);

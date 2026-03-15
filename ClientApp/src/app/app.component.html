@@ -31,7 +31,7 @@
     </mat-card-actions>
   </mat-card>
 
-  @if (currentUser) {
+  @if (currentUser$ | async; as currentUser) {
     <mat-card>
       <mat-card-header>
         <mat-card-title>Ausgangsfrage</mat-card-title>
@@ -58,38 +58,6 @@
           [disabled]="!question.trim() || !initialAnswer.trim()"
         >
           Validation starten
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  }
-
-  @if (currentValidation) {
-    <mat-card>
-      <mat-card-header>
-        <mat-card-title>Erste Nachfrage</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="form-grid">
-          <mat-form-field appearance="outline" class="col-span-2">
-            <mat-label>Nachfrage (Inquiry)</mat-label>
-            <input matInput [(ngModel)]="firstInquiry" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="col-span-2">
-            <mat-label>Antwort des Users (UserAnswer)</mat-label>
-            <textarea matInput rows="4" [(ngModel)]="firstUserAnswer"></textarea>
-          </mat-form-field>
-        </div>
-      </mat-card-content>
-      <mat-card-actions>
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          (click)="onFirstValidate()"
-          [disabled]="!firstInquiry.trim() || !firstUserAnswer.trim()"
-        >
-          Bewerten
         </button>
       </mat-card-actions>
     </mat-card>
