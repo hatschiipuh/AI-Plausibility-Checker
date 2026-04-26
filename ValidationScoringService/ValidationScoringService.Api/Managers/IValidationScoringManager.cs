@@ -6,5 +6,5 @@ namespace ValidationScoringService.Api.Managers;
 
 public interface IValidationScoringManager
 {
-    Task<AiScoreStepResponse> ScoreStepAsync(AiScoreStepRequest request, CancellationToken cancellationToken);
+    Task<VSScoreStepResponse> ScoreStepAsync(VSScoreStepRequest request, CancellationToken cancellationToken);
 }

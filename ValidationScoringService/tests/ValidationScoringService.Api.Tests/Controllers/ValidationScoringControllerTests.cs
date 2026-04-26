@@ -17,7 +17,7 @@ public sealed class ValidationScoringControllerTests
     public async Task ScoreStepAsync_WhenManagerSucceeds_ReturnsOkObjectResult()
     {
         var request = AiScoreStepRequestBuilder.CreateValidRequest();
-        var response = new AiScoreStepResponse
+        var response = new VSScoreStepResponse
         {
             Score = 0.91,
             AiExplanation = "Looks good",

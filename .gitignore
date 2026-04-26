@@ -1,3 +1,5 @@
 [Bb]in/
 [Oo]bj/
 BusinessService/BusinessService.Infrastructure/business.db
+BusinessService/BusinessService.Infrastructure/business.db-shm
+BusinessService/BusinessService.Infrastructure/business.db-wal

@@ -21,7 +21,7 @@ public sealed class ValidationScoringController : ControllerBase
     }
 
     [HttpPost("score-step")]
-    public Task<ActionResult<AiScoreStepResponse>> ScoreStepAsync([FromBody] AiScoreStepRequest request, CancellationToken cancellationToken)
+    public Task<ActionResult<VSScoreStepResponse>> ScoreStepAsync([FromBody] VSScoreStepRequest request, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.ScoreStepAsync(request, cancellationToken));
     }
