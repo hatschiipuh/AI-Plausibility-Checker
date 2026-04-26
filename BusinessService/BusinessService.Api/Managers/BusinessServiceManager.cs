@@ -1,9 +1,11 @@
 using BusinessService.Api.Clients;
 using BusinessService.Api.Clients.ValidationScoringService;
 using BusinessService.Api.Contracts;
-using BusinessService.Domain;
 using BusinessService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using DomainUser = BusinessService.Domain.User;
+using DomainValidation = BusinessService.Domain.Validation;
+using DomainValidationStep = BusinessService.Domain.ValidationStep;
 
 namespace BusinessService.Api.Managers;
 
@@ -18,7 +20,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         this.validationScoringServiceClient = validationScoringServiceClient ?? throw new ArgumentNullException(nameof(validationScoringServiceClient));
     }
 
-    public async Task<UserDto> GetOrCreateUserAsync(GetOrCreateUserRequest request, CancellationToken cancellationToken)
+    public async Task<User> GetOrCreateUserAsync(GetOrCreateUserRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -32,7 +34,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
         if (user is null)
         {
-            user = new User
+            user = new DomainUser
             {
                 Id = Guid.NewGuid(),
                 Email = normalizedEmail,
@@ -43,10 +45,10 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        return MapUserDto(user);
+        return MapUser(user);
     }
 
-    public async Task<ValidationDto> CreateValidationAsync(CreateValidationRequest request, CancellationToken cancellationToken)
+    public async Task<Validation> CreateValidationAsync(CreateValidationRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -61,7 +63,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             throw new KeyNotFoundException("User not found.");
         }
 
-        var validation = new Validation
+        var validation = new DomainValidation
         {
             Id = Guid.NewGuid(),
             UserId = request.UserId,
@@ -74,10 +76,10 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         dbContext.Validations.Add(validation);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return MapValidationDto(validation);
+        return MapValidation(validation);
     }
 
-    public async Task<IReadOnlyList<ValidationListItemDto>> GetValidationsForUserAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ValidationListItem>> GetValidationsForUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
         {
@@ -93,7 +95,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         var items = await dbContext.Validations
             .Where(v => v.UserId == userId)
             .OrderByDescending(v => v.CreatedAt)
-            .Select(v => new ValidationListItemDto
+            .Select(v => new ValidationListItem
             {
                 Id = v.Id,
                 Question = v.Question,
@@ -105,7 +107,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         return items;
     }
 
-    public async Task<ValidationDetailsDto> GetValidationDetailsAsync(Guid validationId, CancellationToken cancellationToken)
+    public async Task<ValidationDetails> GetValidationDetailsAsync(Guid validationId, CancellationToken cancellationToken)
     {
         if (validationId == Guid.Empty)
         {
@@ -121,7 +123,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             throw new KeyNotFoundException("Validation not found.");
         }
 
-        return MapValidationDetailsDto(validation);
+        return MapValidationDetails(validation);
     }
 
     public async Task<ValidateStepResponse> ValidateStepAsync(Guid validationId, ValidateStepRequest request, CancellationToken cancellationToken)
@@ -152,7 +154,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             throw new InvalidOperationException("Validation is already completed.");
         }
 
-        var step = new ValidationStep
+        var step = new DomainValidationStep
         {
             Id = Guid.NewGuid(),
             ValidationId = validation.Id,
@@ -166,7 +168,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
         dbContext.ValidationSteps.Add(step);
 
-        var aiRequest = new AiScoreStepRequest
+        var aiRequest = new VSScoreStepRequest
         {
             ValidationId = validation.Id,
             Question = validation.Question,
@@ -200,14 +202,14 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
-    private static UserDto MapUserDto(User user) => new()
+    private static User MapUser(DomainUser user) => new()
     {
         Id = user.Id,
         Email = user.Email,
         DisplayName = user.DisplayName
     };
 
-    private static ValidationDto MapValidationDto(Validation validation) => new()
+    private static Validation MapValidation(DomainValidation validation) => new()
     {
         Id = validation.Id,
         UserId = validation.UserId,
@@ -216,9 +218,9 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         IsCompleted = validation.IsCompleted
     };
 
-    private static ValidationDetailsDto MapValidationDetailsDto(Validation validation)
+    private static ValidationDetails MapValidationDetails(DomainValidation validation)
     {
-        return new ValidationDetailsDto
+        return new ValidationDetails
         {
             Id = validation.Id,
             UserId = validation.UserId,
@@ -228,7 +230,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             CreatedAt = validation.CreatedAt,
             Steps = validation.Steps
                 .OrderBy(step => step.CreatedAt)
-                .Select(step => new ValidationStepDto
+                .Select(step => new ValidationStep
                 {
                     Id = step.Id,
                     CreatedAt = step.CreatedAt,

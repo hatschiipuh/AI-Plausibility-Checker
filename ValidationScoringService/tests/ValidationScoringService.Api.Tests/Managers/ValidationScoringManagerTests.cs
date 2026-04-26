@@ -24,38 +24,26 @@ public sealed class ValidationScoringManagerTests
     {
         yield return new object[]
         {
-            new Action<AiScoreStepRequest>(request => request.ValidationId = Guid.Empty),
+            new Action<VSScoreStepRequest>(request => request.ValidationId = Guid.Empty),
             "ValidationId"
         };
 
         yield return new object[]
         {
-            new Action<AiScoreStepRequest>(request => request.Question = " "),
+            new Action<VSScoreStepRequest>(request => request.Question = " "),
             "Question"
         };
 
         yield return new object[]
         {
-            new Action<AiScoreStepRequest>(request => request.InitialAnswer = string.Empty),
+            new Action<VSScoreStepRequest>(request => request.InitialAnswer = string.Empty),
             "InitialAnswer"
-        };
-
-        yield return new object[]
-        {
-            new Action<AiScoreStepRequest>(request => request.Inquiry = null!),
-            "Inquiry"
-        };
-
-        yield return new object[]
-        {
-            new Action<AiScoreStepRequest>(request => request.UserAnswer = null!),
-            "UserAnswer"
         };
     }
 
     [Theory]
     [MemberData(nameof(InvalidRequestMutations))]
-    public async Task ScoreStepAsync_WithInvalidRequest_ThrowsArgumentException(Action<AiScoreStepRequest> mutate, string expectedFragment)
+    public async Task ScoreStepAsync_WithInvalidRequest_ThrowsArgumentException(Action<VSScoreStepRequest> mutate, string expectedFragment)
     {
         var llmClientMock = new Mock<ILLMClient>(MockBehavior.Strict);
         var manager = new ValidationScoringManager(llmClientMock.Object);
@@ -73,7 +61,7 @@ public sealed class ValidationScoringManagerTests
     {
         using var cts = new CancellationTokenSource();
         var request = AiScoreStepRequestBuilder.CreateValidRequest();
-        var modelResult = new AiModelResult
+        var modelResult = new LLMResultModel
         {
             Score = 0.87,
             Explanation = "Detailed verdict",

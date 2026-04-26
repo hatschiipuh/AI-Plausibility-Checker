@@ -8,7 +8,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IValidationScoringManager, ValidationScoringManager>();
-builder.Services.AddSingleton<ILLMClient, LLMClientMock>();
+//builder.Services.AddSingleton<ILLMClient, LLMClientMock>();
+
+builder.Services.AddHttpClient<ILLMClient, LLMPerplexityClient>();
+
+builder.Services.Configure<PerplexitySettings>(
+    builder.Configuration.GetSection("Perplexity"));
 
 var app = builder.Build();
 

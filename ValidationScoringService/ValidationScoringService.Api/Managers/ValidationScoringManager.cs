@@ -15,7 +15,7 @@ public sealed class ValidationScoringManager : IValidationScoringManager
         this.llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
     }
 
-    public async Task<AiScoreStepResponse> ScoreStepAsync(AiScoreStepRequest request, CancellationToken cancellationToken)
+    public async Task<VSScoreStepResponse> ScoreStepAsync(VSScoreStepRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -34,19 +34,9 @@ public sealed class ValidationScoringManager : IValidationScoringManager
             throw new ArgumentException("InitialAnswer must not be empty.", nameof(request));
         }
 
-        if (string.IsNullOrWhiteSpace(request.Inquiry))
-        {
-            throw new ArgumentException("Inquiry must not be empty.", nameof(request));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.UserAnswer))
-        {
-            throw new ArgumentException("UserAnswer must not be empty.", nameof(request));
-        }
-
         var modelResult = await llmClient.EvaluateStepAsync(request, cancellationToken).ConfigureAwait(false);
 
-        return new AiScoreStepResponse
+        return new VSScoreStepResponse
         {
             Score = modelResult.Score,
             AiExplanation = modelResult.Explanation,

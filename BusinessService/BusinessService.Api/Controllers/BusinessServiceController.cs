@@ -21,25 +21,25 @@ public sealed class BusinessServiceController : ControllerBase
     }
 
     [HttpPost("users/GetOrCreateUser")]
-    public Task<ActionResult<UserDto>> GetOrCreateUserAsync([FromBody] GetOrCreateUserRequest request, CancellationToken cancellationToken)
+    public Task<ActionResult<User>> GetOrCreateUserAsync([FromBody] GetOrCreateUserRequest request, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.GetOrCreateUserAsync(request, cancellationToken));
     }
 
     [HttpPost("Validations/CreateValidation")]
-    public Task<ActionResult<ValidationDto>> CreateValidationAsync([FromBody] CreateValidationRequest request, CancellationToken cancellationToken)
+    public Task<ActionResult<Validation>> CreateValidationAsync([FromBody] CreateValidationRequest request, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.CreateValidationAsync(request, cancellationToken));
     }
 
     [HttpGet("Validations/GetValidationsForUser")]
-    public Task<ActionResult<IReadOnlyList<ValidationListItemDto>>> GetValidationsForUserAsync([FromQuery] Guid userId, CancellationToken cancellationToken)
+    public Task<ActionResult<IReadOnlyList<ValidationListItem>>> GetValidationsForUserAsync([FromQuery] Guid userId, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.GetValidationsForUserAsync(userId, cancellationToken));
     }
 
     [HttpGet("Validations/GetValidationDetails")]
-    public Task<ActionResult<ValidationDetailsDto>> GetValidationDetailsAsync([FromQuery] Guid validationId, CancellationToken cancellationToken)
+    public Task<ActionResult<ValidationDetails>> GetValidationDetailsAsync([FromQuery] Guid validationId, CancellationToken cancellationToken)
     {
         return ExecuteAsync(() => manager.GetValidationDetailsAsync(validationId, cancellationToken));
     }
