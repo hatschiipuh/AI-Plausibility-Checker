@@ -1,12 +1,11 @@
-﻿using BusinessService.Api.Clients;
+﻿
 using BusinessService.Api.Clients.ValidationScoringService;
 using BusinessService.Api.Contracts;
-using BusinessService.Api.Managers;
-using BusinessService.Domain;
 using BusinessService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-
+using User = BusinessService.Domain.User;
+using Validation = BusinessService.Domain.Validation;
 namespace BusinessService.Api.Managers.Tests;
 
 public sealed class BusinessServiceManagerTests
@@ -50,7 +49,7 @@ public sealed class BusinessServiceManagerTests
         await using var dbContext = CreateDbContext();
         var validation = await SeedValidationAsync(dbContext);
 
-        var aiResponse = new AiScoreStepResponse
+        var aiResponse = new VSScoreStepResponse
         {
             Score = 0.82,
             AiExplanation = "looks convincing",
@@ -60,7 +59,7 @@ public sealed class BusinessServiceManagerTests
 
         var aiClient = new Mock<IValidationScoringServiceClient>();
         aiClient
-            .Setup(client => client.ScoreStepAsync(It.IsAny<AiScoreStepRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(client => client.ScoreStepAsync(It.IsAny<VSScoreStepRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(aiResponse);
 
         var manager = new BusinessServiceManager(dbContext, aiClient.Object);

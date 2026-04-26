@@ -11,9 +11,9 @@ public sealed class BusinessServiceControllerTests
     private readonly Mock<IBusinessServiceManager> managerMock = new();
 
     [Fact]
-    public async Task GetOrCreateUserAsync_ReturnsOk_WithUserDto()
+    public async Task GetOrCreateUserAsync_ReturnsOk_WithUser()
     {
-        var expected = new UserDto { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "User" };
+        var expected = new User { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "User" };
         managerMock
             .Setup(m => m.GetOrCreateUserAsync(It.IsAny<GetOrCreateUserRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
