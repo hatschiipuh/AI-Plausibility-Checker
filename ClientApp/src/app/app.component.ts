@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -44,6 +44,7 @@ import {
 })
 export class AppComponent {
   private readonly client = inject(BusinessServiceClient);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly dialog = inject(MatDialog);
   private isInquiryDialogOpen = false;
 
@@ -78,6 +79,7 @@ export class AppComponent {
 
     this.client.getOrCreateUser(request).subscribe((user) => {
       this.currentUserSubject.next(user);
+      this.changeDetectorRef.markForCheck();
     });
   }
 
@@ -109,6 +111,8 @@ export class AppComponent {
       if (validation.id) {
         this.validateStep(validation.id, this.question.trim(), this.initialAnswer.trim());
       }
+
+      this.changeDetectorRef.markForCheck();
     });
   }
 
@@ -142,6 +146,7 @@ export class AppComponent {
     this.lastExplanation = response.aiExplanation;
     this.nextInquiry = response.nextInquiry;
     this.isCompleted = response.isCompleted ?? false;
+    this.changeDetectorRef.markForCheck();
 
     if (this.currentValidation?.id) {
       this.loadValidationDetails(this.currentValidation.id);
@@ -157,6 +162,7 @@ export class AppComponent {
       this.validationDetails = details;
       this.steps = details.steps ?? [];
       this.isCompleted = details.isCompleted ?? false;
+      this.changeDetectorRef.markForCheck();
 
       const openInquiry = this.getOpenInquiry(this.steps);
       if (openInquiry && !this.isCompleted && !this.isInquiryDialogOpen) {
@@ -195,6 +201,7 @@ export class AppComponent {
 
     dialogRef.afterClosed().subscribe((result) => {
       this.isInquiryDialogOpen = false;
+      this.changeDetectorRef.markForCheck();
 
       if (!result?.userAnswer || !this.currentValidation?.id) {
         return;

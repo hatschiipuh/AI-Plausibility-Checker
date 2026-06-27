@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ValidationScoringService.Api.Contracts;
@@ -45,11 +46,6 @@ public sealed class ValidationScoringControllerTests
         {
             new Func<Exception>(() => new ArgumentException("Invalid request"))
         };
-
-        yield return new object[]
-        {
-            new Func<Exception>(() => new InvalidOperationException("Currently unavailable"))
-        };
     }
 
     [Theory]
@@ -69,6 +65,46 @@ public sealed class ValidationScoringControllerTests
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         Assert.Equal(exception.Message, badRequest.Value);
+        managerMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ScoreStepAsync_WhenManagerThrowsInvalidOperationException_ReturnsInternalServerError()
+    {
+        var request = AiScoreStepRequestBuilder.CreateValidRequest();
+        var exception = new InvalidOperationException("Currently unavailable");
+        var managerMock = new Mock<IValidationScoringManager>(MockBehavior.Strict);
+        managerMock
+            .Setup(manager => manager.ScoreStepAsync(request, CancellationToken.None))
+            .ThrowsAsync(exception);
+
+        var controller = new ValidationScoringController(managerMock.Object);
+
+        var actionResult = await controller.ScoreStepAsync(request, CancellationToken.None);
+
+        var objectResult = Assert.IsType<ObjectResult>(actionResult.Result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+        Assert.Equal(exception.Message, objectResult.Value);
+        managerMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ScoreStepAsync_WhenManagerThrowsHttpRequestException_ReturnsBadGateway()
+    {
+        var request = AiScoreStepRequestBuilder.CreateValidRequest();
+        var exception = new HttpRequestException("Provider failed");
+        var managerMock = new Mock<IValidationScoringManager>(MockBehavior.Strict);
+        managerMock
+            .Setup(manager => manager.ScoreStepAsync(request, CancellationToken.None))
+            .ThrowsAsync(exception);
+
+        var controller = new ValidationScoringController(managerMock.Object);
+
+        var actionResult = await controller.ScoreStepAsync(request, CancellationToken.None);
+
+        var objectResult = Assert.IsType<ObjectResult>(actionResult.Result);
+        Assert.Equal(StatusCodes.Status502BadGateway, objectResult.StatusCode);
+        Assert.Equal(exception.Message, objectResult.Value);
         managerMock.VerifyAll();
     }
 

@@ -14,7 +14,7 @@ internal static class AiScoreStepRequestBuilder
             InitialAnswer = "We encrypt everything.",
             Inquiries =
             [
-                new VSScoreStepRequestInquery
+                new VSScoreStepRequestInquiry
                 {
                     Inquiry = "Can you elaborate on access controls?",
                     UserAnswer = "Only admins can view decrypted data."
