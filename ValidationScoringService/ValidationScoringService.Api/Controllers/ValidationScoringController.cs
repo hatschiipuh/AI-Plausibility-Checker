@@ -40,9 +40,13 @@ public sealed class ValidationScoringController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+        catch (HttpRequestException ex)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, ex.Message);
+        }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
         }
         catch (KeyNotFoundException)
         {

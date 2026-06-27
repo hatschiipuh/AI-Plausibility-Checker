@@ -58,8 +58,10 @@ public sealed class BusinessServiceManagerTests
         };
 
         var aiClient = new Mock<IValidationScoringServiceClient>();
+        VSScoreStepRequest? capturedRequest = null;
         aiClient
             .Setup(client => client.ScoreStepAsync(It.IsAny<VSScoreStepRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<VSScoreStepRequest, CancellationToken>((request, _) => capturedRequest = request)
             .ReturnsAsync(aiResponse);
 
         var manager = new BusinessServiceManager(dbContext, aiClient.Object);
@@ -85,6 +87,10 @@ public sealed class BusinessServiceManagerTests
         Assert.Equal(aiResponse.AiExplanation, step.AiExplanation);
         Assert.Equal(request.Inquiry, step.Inquiry);
         Assert.Equal(request.UserAnswer, step.UserAnswer);
+        Assert.NotNull(capturedRequest);
+        var inquiry = Assert.Single(capturedRequest!.Inquiries);
+        Assert.Equal(request.Inquiry, inquiry.Inquiry);
+        Assert.Equal(request.UserAnswer, inquiry.UserAnswer);
     }
 
     private static async Task<Validation> SeedValidationAsync(BusinessDbContext dbContext)

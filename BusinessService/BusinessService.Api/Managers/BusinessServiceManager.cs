@@ -168,13 +168,23 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
         dbContext.ValidationSteps.Add(step);
 
+        var inquiries = validation.Steps
+            .Append(step)
+            .DistinctBy(existingStep => existingStep.Id)
+            .OrderBy(existingStep => existingStep.CreatedAt)
+            .Select(existingStep => new VSScoreStepRequestInquiry
+            {
+                Inquiry = existingStep.Inquiry,
+                UserAnswer = existingStep.UserAnswer
+            })
+            .ToList();
+
         var aiRequest = new VSScoreStepRequest
         {
             ValidationId = validation.Id,
             Question = validation.Question,
             InitialAnswer = validation.InitialAnswer,
-            Inquiry = step.Inquiry,
-            UserAnswer = step.UserAnswer
+            Inquiries = inquiries
         };
 
         var aiResponse = await validationScoringServiceClient.ScoreStepAsync(aiRequest, cancellationToken);
