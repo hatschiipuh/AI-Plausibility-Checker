@@ -294,6 +294,15 @@ namespace BusinessService.Api.Clients.ValidationScoringService
         [System.Text.Json.Serialization.JsonPropertyName("initialAnswer")]
         public string InitialAnswer { get; set; }
 
+        [System.Text.Json.Serialization.JsonPropertyName("inquiries")]
+        public System.Collections.Generic.ICollection<VSScoreStepRequestInquiry> Inquiries { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class VSScoreStepRequestInquiry
+    {
+
         [System.Text.Json.Serialization.JsonPropertyName("inquiry")]
         public string Inquiry { get; set; }
 

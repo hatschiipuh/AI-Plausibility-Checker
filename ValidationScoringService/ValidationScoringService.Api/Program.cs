@@ -10,10 +10,16 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IValidationScoringManager, ValidationScoringManager>();
 //builder.Services.AddSingleton<ILLMClient, LLMClientMock>();
 
-builder.Services.AddHttpClient<ILLMClient, LLMPerplexityClient>();
+builder.Services
+    .AddOptions<PerplexitySettings>()
+    .Bind(builder.Configuration.GetSection("Perplexity"))
+    .ValidateDataAnnotations()
+    .Validate(
+        settings => PerplexitySettings.IsSupportedModel(settings.Model),
+        $"Perplexity:Model must be one of: {string.Join(", ", PerplexitySettings.SupportedModels)}.")
+    .ValidateOnStart();
 
-builder.Services.Configure<PerplexitySettings>(
-    builder.Configuration.GetSection("Perplexity"));
+builder.Services.AddHttpClient<ILLMClient, LLMPerplexityClient>();
 
 var app = builder.Build();
 

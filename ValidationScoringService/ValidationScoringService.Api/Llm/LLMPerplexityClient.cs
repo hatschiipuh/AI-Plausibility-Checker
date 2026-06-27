@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using ValidationScoringService.Api.Contracts;
@@ -27,42 +26,43 @@ public sealed class LLMPerplexityClient : ILLMClient
 
         this.httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", apiKey);
-        
-    var requestType = ResolveRequestType(this.settings);
+
+        var requestType = ResolveRequestType(this.settings);
 
         return requestType switch
         {
             LLMPerplexityRequestType.Sonar =>
                 EvaluateWithSonarAsync(request, cancellationToken),
-
-            LLMPerplexityRequestType.Agent =>
-                throw new NotSupportedException($"requestType Agent is currently not Supported"),
-
-            _ => throw new NotSupportedException($"Unsupported request type: {requestType}")
+            _ => throw new InvalidOperationException(
+                $"Perplexity:Model '{this.settings.Model}' is not supported.")
         };
-      
     }
 
     private static LLMPerplexityRequestType ResolveRequestType(PerplexitySettings settings)
     {
-        switch (settings.Model.ToLowerInvariant())
+        if (PerplexitySettings.IsSupportedModel(settings.Model))
         {
-            case "sonar" or  "sonar-pro" or "sonar-deep-research" or "sonar-reasoning-pro":
-                return LLMPerplexityRequestType.Sonar;
-            default :
-                return LLMPerplexityRequestType.Agent;
+            return LLMPerplexityRequestType.Sonar;
         }
+
+        throw new InvalidOperationException(
+            $"Perplexity:Model '{settings.Model}' is not supported.");
     }
 
      private async Task<LLMResultModel> EvaluateWithSonarAsync(
         VSScoreStepRequest request,
         CancellationToken cancellationToken)
     {
-        var sonarPrompt = new SonarPromptRequest(this.settings.Model, request);
+        var sonarPrompt = LLMValidationPerplexitySonarPromptBuilder.Build(request);
+        var clientrequest = LLMValidationPerplexitySonarPromptToRequestMapper.Map(
+            this.settings.Model,
+            sonarPrompt);
+
+        var a = JsonSerializer.Serialize(clientrequest, new JsonSerializerOptions { WriteIndented = true });
 
         using var response = await this.httpClient.PostAsJsonAsync(
             "chat/completions",
-            sonarPrompt.ToRequest(),
+            clientrequest,
             cancellationToken);
 
         response.EnsureSuccessStatusCode();
@@ -73,10 +73,10 @@ public sealed class LLMPerplexityClient : ILLMClient
         if (payload is null)
             throw new InvalidOperationException("Perplexity Sonar returned an empty response.");
 
-        return MapSonarResponse(payload);
+        return ParseResultModel(payload);
     }
 
-    private static LLMResultModel MapSonarResponse(SonarResponse response)
+    private static LLMResultModel ParseResultModel(SonarResponse response)
     {
         var content = response.choices?.FirstOrDefault()?.message?.content?.Trim();
 
@@ -85,8 +85,16 @@ public sealed class LLMPerplexityClient : ILLMClient
 
         content = RemoveCodeFences(content);
 
+        var normalizedContent = content.Trim();
+        
+        if (normalizedContent.StartsWith('"'))
+        {
+            normalizedContent = JsonSerializer.Deserialize<string>(normalizedContent)
+                ?? throw new InvalidOperationException("Content is an invalid JSON string.");
+        }
+        
         var result = JsonSerializer.Deserialize<LLMResultModel>(
-            content,
+            normalizedContent,
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true

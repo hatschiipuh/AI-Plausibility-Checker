@@ -8,10 +8,10 @@ public class VSScoreStepRequest
     public string Question { get; set; } = string.Empty;
     public string InitialAnswer { get; set; } = string.Empty;
 
-    public List<VSScoreStepRequestInquery> Inquiries { get; set; } = new List<VSScoreStepRequestInquery>();
+    public List<VSScoreStepRequestInquiry> Inquiries { get; set; } = new List<VSScoreStepRequestInquiry>();
 }
 
-public class VSScoreStepRequestInquery
+public class VSScoreStepRequestInquiry
 {
     public string Inquiry { get; set; } = string.Empty;
     public string UserAnswer { get; set; } = string.Empty;
