@@ -19,22 +19,30 @@ export interface IBusinessServiceClient {
      * @param body (optional) 
      * @return OK
      */
-    getOrCreateUser(body: GetOrCreateUserRequest | undefined): Observable<UserDto>;
+    register(body: RegisterRequest | undefined): Observable<AuthResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    createValidation(body: CreateValidationRequest | undefined): Observable<ValidationDto>;
+    login(body: LoginRequest | undefined): Observable<AuthResponse>;
     /**
-     * @param userId (optional) 
      * @return OK
      */
-    getValidationsForUser(userId: string | undefined): Observable<ValidationListItemDto[]>;
+    me(): Observable<User>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    createValidation(body: CreateValidationRequest | undefined): Observable<Validation>;
+    /**
+     * @return OK
+     */
+    getValidationsForUser(): Observable<ValidationListItem[]>;
     /**
      * @param validationId (optional) 
      * @return OK
      */
-    getValidationDetails(validationId: string | undefined): Observable<ValidationDetailsDto>;
+    getValidationDetails(validationId: string | undefined): Observable<ValidationDetails>;
     /**
      * @param validationId (optional) 
      * @param body (optional) 
@@ -60,8 +68,8 @@ export class BusinessServiceClient implements IBusinessServiceClient {
      * @param body (optional) 
      * @return OK
      */
-    getOrCreateUser(body: GetOrCreateUserRequest | undefined): Observable<UserDto> {
-        let url_ = this.baseUrl + "/api/BusinessService/users/GetOrCreateUser";
+    register(body: RegisterRequest | undefined): Observable<AuthResponse> {
+        let url_ = this.baseUrl + "/api/Auth/register";
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
@@ -77,20 +85,20 @@ export class BusinessServiceClient implements IBusinessServiceClient {
         };
 
         return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetOrCreateUser(response_);
+            return this.processRegister(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processGetOrCreateUser(response_ as any);
+                    return this.processRegister(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<UserDto>;
+                    return _observableThrow(e) as any as Observable<AuthResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<UserDto>;
+                return _observableThrow(response_) as any as Observable<AuthResponse>;
         }));
     }
 
-    protected processGetOrCreateUser(response: HttpResponseBase): Observable<UserDto> {
+    protected processRegister(response: HttpResponseBase): Observable<AuthResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -101,7 +109,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = UserDto.fromJS(resultData200);
+            result200 = AuthResponse.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -116,7 +124,114 @@ export class BusinessServiceClient implements IBusinessServiceClient {
      * @param body (optional) 
      * @return OK
      */
-    createValidation(body: CreateValidationRequest | undefined): Observable<ValidationDto> {
+    login(body: LoginRequest | undefined): Observable<AuthResponse> {
+        let url_ = this.baseUrl + "/api/Auth/login";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processLogin(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processLogin(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<AuthResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<AuthResponse>;
+        }));
+    }
+
+    protected processLogin(response: HttpResponseBase): Observable<AuthResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AuthResponse.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    me(): Observable<User> {
+        let url_ = this.baseUrl + "/api/Auth/me";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processMe(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processMe(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<User>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<User>;
+        }));
+    }
+
+    protected processMe(response: HttpResponseBase): Observable<User> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = User.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    createValidation(body: CreateValidationRequest | undefined): Observable<Validation> {
         let url_ = this.baseUrl + "/api/BusinessService/Validations/CreateValidation";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -139,14 +254,14 @@ export class BusinessServiceClient implements IBusinessServiceClient {
                 try {
                     return this.processCreateValidation(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ValidationDto>;
+                    return _observableThrow(e) as any as Observable<Validation>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ValidationDto>;
+                return _observableThrow(response_) as any as Observable<Validation>;
         }));
     }
 
-    protected processCreateValidation(response: HttpResponseBase): Observable<ValidationDto> {
+    protected processCreateValidation(response: HttpResponseBase): Observable<Validation> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -157,7 +272,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ValidationDto.fromJS(resultData200);
+            result200 = Validation.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -169,15 +284,10 @@ export class BusinessServiceClient implements IBusinessServiceClient {
     }
 
     /**
-     * @param userId (optional) 
      * @return OK
      */
-    getValidationsForUser(userId: string | undefined): Observable<ValidationListItemDto[]> {
-        let url_ = this.baseUrl + "/api/BusinessService/Validations/GetValidationsForUser?";
-        if (userId === null)
-            throw new globalThis.Error("The parameter 'userId' cannot be null.");
-        else if (userId !== undefined)
-            url_ += "userId=" + encodeURIComponent("" + userId) + "&";
+    getValidationsForUser(): Observable<ValidationListItem[]> {
+        let url_ = this.baseUrl + "/api/BusinessService/Validations/GetValidationsForUser";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -195,14 +305,14 @@ export class BusinessServiceClient implements IBusinessServiceClient {
                 try {
                     return this.processGetValidationsForUser(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ValidationListItemDto[]>;
+                    return _observableThrow(e) as any as Observable<ValidationListItem[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ValidationListItemDto[]>;
+                return _observableThrow(response_) as any as Observable<ValidationListItem[]>;
         }));
     }
 
-    protected processGetValidationsForUser(response: HttpResponseBase): Observable<ValidationListItemDto[]> {
+    protected processGetValidationsForUser(response: HttpResponseBase): Observable<ValidationListItem[]> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -216,7 +326,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(ValidationListItemDto.fromJS(item));
+                    result200!.push(ValidationListItem.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -235,7 +345,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
      * @param validationId (optional) 
      * @return OK
      */
-    getValidationDetails(validationId: string | undefined): Observable<ValidationDetailsDto> {
+    getValidationDetails(validationId: string | undefined): Observable<ValidationDetails> {
         let url_ = this.baseUrl + "/api/BusinessService/Validations/GetValidationDetails?";
         if (validationId === null)
             throw new globalThis.Error("The parameter 'validationId' cannot be null.");
@@ -258,14 +368,14 @@ export class BusinessServiceClient implements IBusinessServiceClient {
                 try {
                     return this.processGetValidationDetails(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ValidationDetailsDto>;
+                    return _observableThrow(e) as any as Observable<ValidationDetails>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ValidationDetailsDto>;
+                return _observableThrow(response_) as any as Observable<ValidationDetails>;
         }));
     }
 
-    protected processGetValidationDetails(response: HttpResponseBase): Observable<ValidationDetailsDto> {
+    protected processGetValidationDetails(response: HttpResponseBase): Observable<ValidationDetails> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -276,7 +386,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ValidationDetailsDto.fromJS(resultData200);
+            result200 = ValidationDetails.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -349,8 +459,47 @@ export class BusinessServiceClient implements IBusinessServiceClient {
     }
 }
 
+export class AuthResponse implements IAuthResponse {
+    accessToken?: string | undefined;
+    user?: User;
+
+    constructor(data?: IAuthResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.accessToken = _data["accessToken"];
+            this.user = _data["user"] ? User.fromJS(_data["user"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): AuthResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AuthResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["accessToken"] = this.accessToken;
+        data["user"] = this.user ? this.user.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IAuthResponse {
+    accessToken?: string | undefined;
+    user?: User;
+}
+
 export class CreateValidationRequest implements ICreateValidationRequest {
-    userId?: string;
     question?: string | undefined;
     initialAnswer?: string | undefined;
 
@@ -365,7 +514,6 @@ export class CreateValidationRequest implements ICreateValidationRequest {
 
     init(_data?: any) {
         if (_data) {
-            this.userId = _data["userId"];
             this.question = _data["question"];
             this.initialAnswer = _data["initialAnswer"];
         }
@@ -380,7 +528,6 @@ export class CreateValidationRequest implements ICreateValidationRequest {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["userId"] = this.userId;
         data["question"] = this.question;
         data["initialAnswer"] = this.initialAnswer;
         return data;
@@ -388,16 +535,56 @@ export class CreateValidationRequest implements ICreateValidationRequest {
 }
 
 export interface ICreateValidationRequest {
-    userId?: string;
     question?: string | undefined;
     initialAnswer?: string | undefined;
 }
 
-export class GetOrCreateUserRequest implements IGetOrCreateUserRequest {
+export class LoginRequest implements ILoginRequest {
+    email?: string | undefined;
+    password?: string | undefined;
+
+    constructor(data?: ILoginRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.email = _data["email"];
+            this.password = _data["password"];
+        }
+    }
+
+    static fromJS(data: any): LoginRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new LoginRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["email"] = this.email;
+        data["password"] = this.password;
+        return data;
+    }
+}
+
+export interface ILoginRequest {
+    email?: string | undefined;
+    password?: string | undefined;
+}
+
+export class RegisterRequest implements IRegisterRequest {
     email?: string | undefined;
     displayName?: string | undefined;
+    password?: string | undefined;
 
-    constructor(data?: IGetOrCreateUserRequest) {
+    constructor(data?: IRegisterRequest) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -410,12 +597,13 @@ export class GetOrCreateUserRequest implements IGetOrCreateUserRequest {
         if (_data) {
             this.email = _data["email"];
             this.displayName = _data["displayName"];
+            this.password = _data["password"];
         }
     }
 
-    static fromJS(data: any): GetOrCreateUserRequest {
+    static fromJS(data: any): RegisterRequest {
         data = typeof data === 'object' ? data : {};
-        let result = new GetOrCreateUserRequest();
+        let result = new RegisterRequest();
         result.init(data);
         return result;
     }
@@ -424,21 +612,23 @@ export class GetOrCreateUserRequest implements IGetOrCreateUserRequest {
         data = typeof data === 'object' ? data : {};
         data["email"] = this.email;
         data["displayName"] = this.displayName;
+        data["password"] = this.password;
         return data;
     }
 }
 
-export interface IGetOrCreateUserRequest {
+export interface IRegisterRequest {
     email?: string | undefined;
     displayName?: string | undefined;
+    password?: string | undefined;
 }
 
-export class UserDto implements IUserDto {
+export class User implements IUser {
     id?: string;
     email?: string | undefined;
     displayName?: string | undefined;
 
-    constructor(data?: IUserDto) {
+    constructor(data?: IUser) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -455,9 +645,9 @@ export class UserDto implements IUserDto {
         }
     }
 
-    static fromJS(data: any): UserDto {
+    static fromJS(data: any): User {
         data = typeof data === 'object' ? data : {};
-        let result = new UserDto();
+        let result = new User();
         result.init(data);
         return result;
     }
@@ -471,7 +661,7 @@ export class UserDto implements IUserDto {
     }
 }
 
-export interface IUserDto {
+export interface IUser {
     id?: string;
     email?: string | undefined;
     displayName?: string | undefined;
@@ -569,16 +759,68 @@ export interface IValidateStepResponse {
     nextInquiry?: string | undefined;
 }
 
-export class ValidationDetailsDto implements IValidationDetailsDto {
+export class Validation implements IValidation {
+    id?: string;
+    userId?: string;
+    question?: string | undefined;
+    initialAnswer?: string | undefined;
+    isCompleted?: boolean;
+
+    constructor(data?: IValidation) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.userId = _data["userId"];
+            this.question = _data["question"];
+            this.initialAnswer = _data["initialAnswer"];
+            this.isCompleted = _data["isCompleted"];
+        }
+    }
+
+    static fromJS(data: any): Validation {
+        data = typeof data === 'object' ? data : {};
+        let result = new Validation();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["userId"] = this.userId;
+        data["question"] = this.question;
+        data["initialAnswer"] = this.initialAnswer;
+        data["isCompleted"] = this.isCompleted;
+        return data;
+    }
+}
+
+export interface IValidation {
+    id?: string;
+    userId?: string;
+    question?: string | undefined;
+    initialAnswer?: string | undefined;
+    isCompleted?: boolean;
+}
+
+export class ValidationDetails implements IValidationDetails {
     id?: string;
     userId?: string;
     question?: string | undefined;
     initialAnswer?: string | undefined;
     isCompleted?: boolean;
     createdAt?: string;
-    steps?: ValidationStepDto[] | undefined;
+    steps?: ValidationStep[] | undefined;
 
-    constructor(data?: IValidationDetailsDto) {
+    constructor(data?: IValidationDetails) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -598,14 +840,14 @@ export class ValidationDetailsDto implements IValidationDetailsDto {
             if (Array.isArray(_data["steps"])) {
                 this.steps = [] as any;
                 for (let item of _data["steps"])
-                    this.steps!.push(ValidationStepDto.fromJS(item));
+                    this.steps!.push(ValidationStep.fromJS(item));
             }
         }
     }
 
-    static fromJS(data: any): ValidationDetailsDto {
+    static fromJS(data: any): ValidationDetails {
         data = typeof data === 'object' ? data : {};
-        let result = new ValidationDetailsDto();
+        let result = new ValidationDetails();
         result.init(data);
         return result;
     }
@@ -627,75 +869,23 @@ export class ValidationDetailsDto implements IValidationDetailsDto {
     }
 }
 
-export interface IValidationDetailsDto {
+export interface IValidationDetails {
     id?: string;
     userId?: string;
     question?: string | undefined;
     initialAnswer?: string | undefined;
     isCompleted?: boolean;
     createdAt?: string;
-    steps?: ValidationStepDto[] | undefined;
+    steps?: ValidationStep[] | undefined;
 }
 
-export class ValidationDto implements IValidationDto {
-    id?: string;
-    userId?: string;
-    question?: string | undefined;
-    initialAnswer?: string | undefined;
-    isCompleted?: boolean;
-
-    constructor(data?: IValidationDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.userId = _data["userId"];
-            this.question = _data["question"];
-            this.initialAnswer = _data["initialAnswer"];
-            this.isCompleted = _data["isCompleted"];
-        }
-    }
-
-    static fromJS(data: any): ValidationDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new ValidationDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["userId"] = this.userId;
-        data["question"] = this.question;
-        data["initialAnswer"] = this.initialAnswer;
-        data["isCompleted"] = this.isCompleted;
-        return data;
-    }
-}
-
-export interface IValidationDto {
-    id?: string;
-    userId?: string;
-    question?: string | undefined;
-    initialAnswer?: string | undefined;
-    isCompleted?: boolean;
-}
-
-export class ValidationListItemDto implements IValidationListItemDto {
+export class ValidationListItem implements IValidationListItem {
     id?: string;
     question?: string | undefined;
     isCompleted?: boolean;
     createdAt?: string;
 
-    constructor(data?: IValidationListItemDto) {
+    constructor(data?: IValidationListItem) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -713,9 +903,9 @@ export class ValidationListItemDto implements IValidationListItemDto {
         }
     }
 
-    static fromJS(data: any): ValidationListItemDto {
+    static fromJS(data: any): ValidationListItem {
         data = typeof data === 'object' ? data : {};
-        let result = new ValidationListItemDto();
+        let result = new ValidationListItem();
         result.init(data);
         return result;
     }
@@ -730,14 +920,14 @@ export class ValidationListItemDto implements IValidationListItemDto {
     }
 }
 
-export interface IValidationListItemDto {
+export interface IValidationListItem {
     id?: string;
     question?: string | undefined;
     isCompleted?: boolean;
     createdAt?: string;
 }
 
-export class ValidationStepDto implements IValidationStepDto {
+export class ValidationStep implements IValidationStep {
     id?: string;
     createdAt?: string;
     inquiry?: string | undefined;
@@ -746,7 +936,7 @@ export class ValidationStepDto implements IValidationStepDto {
     aiExplanation?: string | undefined;
     isFinal?: boolean;
 
-    constructor(data?: IValidationStepDto) {
+    constructor(data?: IValidationStep) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -767,9 +957,9 @@ export class ValidationStepDto implements IValidationStepDto {
         }
     }
 
-    static fromJS(data: any): ValidationStepDto {
+    static fromJS(data: any): ValidationStep {
         data = typeof data === 'object' ? data : {};
-        let result = new ValidationStepDto();
+        let result = new ValidationStep();
         result.init(data);
         return result;
     }
@@ -787,7 +977,7 @@ export class ValidationStepDto implements IValidationStepDto {
     }
 }
 
-export interface IValidationStepDto {
+export interface IValidationStep {
     id?: string;
     createdAt?: string;
     inquiry?: string | undefined;
