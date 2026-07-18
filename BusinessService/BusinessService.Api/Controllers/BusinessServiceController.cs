@@ -2,10 +2,13 @@ using System.Net.Mime;
 using BusinessService.Api.Contracts;
 using BusinessService.Api.Managers;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BusinessService.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Produces(MediaTypeNames.Application.Json)]
 [Route("api/[controller]")]
 public sealed class BusinessServiceController : ControllerBase
@@ -17,34 +20,48 @@ public sealed class BusinessServiceController : ControllerBase
         this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
     }
 
-    [HttpPost("users/GetOrCreateUser")]
-    public Task<ActionResult<User>> GetOrCreateUserAsync([FromBody] GetOrCreateUserRequest request, CancellationToken cancellationToken)
-    {
-        return ExecuteAsync(() => manager.GetOrCreateUserAsync(request, cancellationToken));
-    }
-
     [HttpPost("Validations/CreateValidation")]
     public Task<ActionResult<Validation>> CreateValidationAsync([FromBody] CreateValidationRequest request, CancellationToken cancellationToken)
     {
-        return ExecuteAsync(() => manager.CreateValidationAsync(request, cancellationToken));
+        if (!TryGetCurrentUserId(out var currentUserId))
+        {
+            return Task.FromResult<ActionResult<Validation>>(Unauthorized());
+        }
+
+        return ExecuteAsync(() => manager.CreateValidationAsync(currentUserId,request, cancellationToken));
     }
 
     [HttpGet("Validations/GetValidationsForUser")]
-    public Task<ActionResult<IReadOnlyList<ValidationListItem>>> GetValidationsForUserAsync([FromQuery] Guid userId, CancellationToken cancellationToken)
+    public Task<ActionResult<IReadOnlyList<ValidationListItem>>> GetValidationsForCurrentUserAsync(CancellationToken cancellationToken)
     {
-        return ExecuteAsync(() => manager.GetValidationsForUserAsync(userId, cancellationToken));
+        if (!TryGetCurrentUserId(out var currentUserId))
+        {
+            return Task.FromResult<ActionResult<IReadOnlyList<ValidationListItem>>>(Unauthorized());
+        }
+
+        return ExecuteAsync(() => manager.GetValidationsForCurrentUserAsync(currentUserId, cancellationToken));
     }
 
     [HttpGet("Validations/GetValidationDetails")]
     public Task<ActionResult<ValidationDetails>> GetValidationDetailsAsync([FromQuery] Guid validationId, CancellationToken cancellationToken)
     {
-        return ExecuteAsync(() => manager.GetValidationDetailsAsync(validationId, cancellationToken));
+        if (!TryGetCurrentUserId(out var currentUserId))
+        {
+            return Task.FromResult<ActionResult<ValidationDetails>>(Unauthorized());
+        }
+
+        return ExecuteAsync(() => manager.GetValidationDetailsAsync(currentUserId, validationId, cancellationToken));
     }
 
     [HttpPost("Validations/ValidateStep")]
     public Task<ActionResult<ValidateStepResponse>> ValidateStepAsync([FromQuery] Guid validationId, [FromBody] ValidateStepRequest request, CancellationToken cancellationToken)
     {
-        return ExecuteAsync(() => manager.ValidateStepAsync(validationId, request, cancellationToken));
+        if (!TryGetCurrentUserId(out var currentUserId))
+        {
+            return Task.FromResult<ActionResult<ValidateStepResponse>>(Unauthorized());
+        }
+
+        return ExecuteAsync(() => manager.ValidateStepAsync(currentUserId, validationId, request, cancellationToken));
     }
 
     private async Task<ActionResult<T>> ExecuteAsync<T>(Func<Task<T>> action)
@@ -66,5 +83,13 @@ public sealed class BusinessServiceController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    private bool TryGetCurrentUserId(out Guid userId)
+    {
+        userId = Guid.Empty;
+
+        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(claimValue, out userId);
     }
 }

@@ -1,16 +1,86 @@
+using System.Text;
 using BusinessService.Api.Clients.ValidationScoringService;
 using BusinessService.Api.Managers;
 using BusinessService.Infrastructure;
+using BusinessService.Api.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("Business") ?? "Data Source=business.db";
 
 builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-var connectionString = builder.Configuration.GetConnectionString("Business") ?? "Data Source=business.db";
+// add swagger with auth scheme JWT
+builder.Services.AddSwaggerGen(options =>
+ {
+     options.SwaggerDoc("v1", new OpenApiInfo
+     {
+         Title = "BusinessService API",
+         Version = "v1"
+     });
+ 
+     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+     {
+         Name = "Authorization",
+         Type = SecuritySchemeType.Http,
+         Scheme = "bearer",
+         BearerFormat = "JWT",
+         In = ParameterLocation.Header,
+         Description = "Enter a valid JWT bearer token."
+     });
+ 
+     options.AddSecurityRequirement(new OpenApiSecurityRequirement
+     {
+         {
+             new OpenApiSecurityScheme
+             {
+                 Reference = new OpenApiReference
+                 {
+                     Type = ReferenceType.SecurityScheme,
+                     Id = "Bearer"
+                 }
+             },
+             Array.Empty<string>()
+         }
+     });
+ });
+
+builder.Services
+     .AddOptions<JwtSettings>()
+     .Bind(builder.Configuration.GetSection("Jwt"))
+     .ValidateDataAnnotations()
+     .ValidateOnStart();
+
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("Missing config: Jwt");
+
+builder.Services
+     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+     .AddJwtBearer(options =>
+     {
+         options.TokenValidationParameters = new TokenValidationParameters
+         {
+             ValidateIssuer = true,
+             ValidateAudience = true,
+             ValidateLifetime = true,
+             ValidateIssuerSigningKey = true,
+             ValidIssuer = jwtSettings.Issuer,
+             ValidAudience = jwtSettings.Audience,
+             IssuerSigningKey = new SymmetricSecurityKey(
+                 Encoding.UTF8.GetBytes(jwtSettings.SigningKey)),
+             ClockSkew = TimeSpan.Zero
+         };
+     });
+ 
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthManager, AuthManager>();
 
 builder.Services.AddDbContext<BusinessDbContext>(options =>
     options.UseSqlite(connectionString));
@@ -35,6 +105,7 @@ builder.Services.AddScoped<BusinessService.Api.Clients.ValidationScoringService.
 
 builder.Services.AddScoped<IBusinessServiceManager, BusinessServiceManager>();
 
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -48,6 +119,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseHttpsRedirection();
 

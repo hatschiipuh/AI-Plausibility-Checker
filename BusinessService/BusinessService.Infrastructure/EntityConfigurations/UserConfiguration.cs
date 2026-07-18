@@ -13,5 +13,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.Validations)
             .WithOne(v => v.User)
             .HasForeignKey(v => v.UserId);
+
+        builder.Property(u => u.Email).IsRequired();
+        builder.Property(u => u.DisplayName).IsRequired();
+        builder.Property(u => u.PasswordHash).IsRequired();
     }
 }
