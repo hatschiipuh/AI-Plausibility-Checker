@@ -20,53 +20,24 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         this.validationScoringServiceClient = validationScoringServiceClient ?? throw new ArgumentNullException(nameof(validationScoringServiceClient));
     }
 
-    public async Task<User> GetOrCreateUserAsync(GetOrCreateUserRequest request, CancellationToken cancellationToken)
-    {
+    public async Task<Validation> CreateValidationAsync(Guid currentUserId, CreateValidationRequest request, CancellationToken cancellationToken)
+    {     
         ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.DisplayName))
+        if (currentUserId == Guid.Empty)
         {
-            throw new ArgumentException("Email and display name are required.", nameof(request));
+            throw new ArgumentException("A valid currentUserId is required.", nameof(currentUserId));
         }
 
-        var normalizedEmail = NormalizeEmail(request.Email);
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
-
-        if (user is null)
+        if (string.IsNullOrWhiteSpace(request.Question) || string.IsNullOrWhiteSpace(request.InitialAnswer))
         {
-            user = new DomainUser
-            {
-                Id = Guid.NewGuid(),
-                Email = normalizedEmail,
-                DisplayName = request.DisplayName.Trim()
-            };
-
-            dbContext.Users.Add(user);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        return MapUser(user);
-    }
-
-    public async Task<Validation> CreateValidationAsync(CreateValidationRequest request, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (request.UserId == Guid.Empty || string.IsNullOrWhiteSpace(request.Question) || string.IsNullOrWhiteSpace(request.InitialAnswer))
-        {
-            throw new ArgumentException("UserId, question, and initial answer are required.", nameof(request));
-        }
-
-        var userExists = await dbContext.Users.AnyAsync(u => u.Id == request.UserId, cancellationToken);
-        if (!userExists)
-        {
-            throw new KeyNotFoundException("User not found.");
+            throw new ArgumentException("Question and initial answer are required.", nameof(request));
         }
 
         var validation = new DomainValidation
         {
             Id = Guid.NewGuid(),
-            UserId = request.UserId,
+            UserId = currentUserId,
             Question = request.Question.Trim(),
             InitialAnswer = request.InitialAnswer.Trim(),
             CreatedAt = DateTime.UtcNow,
@@ -79,21 +50,21 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         return MapValidation(validation);
     }
 
-    public async Task<IReadOnlyList<ValidationListItem>> GetValidationsForUserAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ValidationListItem>> GetValidationsForCurrentUserAsync(Guid currentUserId, CancellationToken cancellationToken)
     {
-        if (userId == Guid.Empty)
+        if (currentUserId == Guid.Empty)
         {
-            throw new ArgumentException("A valid userId is required.", nameof(userId));
+            throw new ArgumentException("A valid currentUserId is required.", nameof(currentUserId));
         }
 
-        var userExists = await dbContext.Users.AnyAsync(u => u.Id == userId, cancellationToken);
+        var userExists = await dbContext.Users.AnyAsync(u => u.Id == currentUserId, cancellationToken);
         if (!userExists)
         {
             throw new KeyNotFoundException("User not found.");
         }
 
         var items = await dbContext.Validations
-            .Where(v => v.UserId == userId)
+            .Where(v => v.UserId == currentUserId)
             .OrderByDescending(v => v.CreatedAt)
             .Select(v => new ValidationListItem
             {
@@ -107,8 +78,8 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         return items;
     }
 
-    public async Task<ValidationDetails> GetValidationDetailsAsync(Guid validationId, CancellationToken cancellationToken)
-    {
+   public async Task<ValidationDetails> GetValidationDetailsAsync(Guid currentUserId, Guid validationId, CancellationToken cancellationToken)    
+   {
         if (validationId == Guid.Empty)
         {
             throw new ArgumentException("A valid validationId is required.", nameof(validationId));
@@ -116,7 +87,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
         var validation = await dbContext.Validations
             .Include(v => v.Steps)
-            .FirstOrDefaultAsync(v => v.Id == validationId, cancellationToken);
+            .FirstOrDefaultAsync(v => v.Id == validationId && v.UserId == currentUserId, cancellationToken);
 
         if (validation is null)
         {
@@ -126,7 +97,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         return MapValidationDetails(validation);
     }
 
-    public async Task<ValidateStepResponse> ValidateStepAsync(Guid validationId, ValidateStepRequest request, CancellationToken cancellationToken)
+    public async Task<ValidateStepResponse> ValidateStepAsync(Guid currentUserId, Guid validationId, ValidateStepRequest request, CancellationToken cancellationToken)
     {
         if (validationId == Guid.Empty)
         {
@@ -142,7 +113,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
         var validation = await dbContext.Validations
             .Include(v => v.Steps)
-            .FirstOrDefaultAsync(v => v.Id == validationId, cancellationToken);
+            .FirstOrDefaultAsync(v => v.Id == validationId && v.UserId == currentUserId, cancellationToken);
 
         if (validation is null)
         {

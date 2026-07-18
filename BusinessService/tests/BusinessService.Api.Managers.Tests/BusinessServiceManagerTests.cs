@@ -11,36 +11,45 @@ namespace BusinessService.Api.Managers.Tests;
 public sealed class BusinessServiceManagerTests
 {
     [Fact]
-    public async Task GetOrCreateUserAsync_CreatesUser_WhenEmailIsNew()
+    public async Task CreateValidationAsync_CreatesValidation_ForCurrentUser()
     {
         await using var dbContext = CreateDbContext();
         var manager = new BusinessServiceManager(dbContext, Mock.Of<IValidationScoringServiceClient>());
-        var request = new GetOrCreateUserRequest
+        var user = new User
         {
-            Email = " TestUser@Example.com ",
-            DisplayName = "  Jane Doe  "
+            Id = Guid.NewGuid(),
+            Email = "user@example.com",
+            DisplayName = "Jane Doe"
+        };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+
+        var request = new CreateValidationRequest
+        {
+            Question = "Is the answer true?",
+            InitialAnswer = "Yes"
         };
 
-        var result = await manager.GetOrCreateUserAsync(request, CancellationToken.None);
+        var result = await manager.CreateValidationAsync(user.Id, request, CancellationToken.None);
 
-        Assert.Equal("testuser@example.com", result.Email);
-        Assert.Equal("Jane Doe", result.DisplayName);
-        Assert.Single(dbContext.Users);
+        Assert.Equal(user.Id, result.UserId);
+        Assert.Equal(request.Question, result.Question);
+        Assert.Equal(request.InitialAnswer, result.InitialAnswer);
+        Assert.Single(dbContext.Validations);
     }
 
     [Fact]
-    public async Task CreateValidationAsync_ThrowsKeyNotFound_WhenUserDoesNotExist()
+    public async Task CreateValidationAsync_ThrowsArgumentException_WhenCurrentUserIdIsEmpty()
     {
         await using var dbContext = CreateDbContext();
         var manager = new BusinessServiceManager(dbContext, Mock.Of<IValidationScoringServiceClient>());
         var request = new CreateValidationRequest
         {
-            UserId = Guid.NewGuid(),
             Question = "Is the answer true?",
             InitialAnswer = "Yes"
         };
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => manager.CreateValidationAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.CreateValidationAsync(Guid.Empty, request, CancellationToken.None));
     }
 
     [Fact]
@@ -71,7 +80,7 @@ public sealed class BusinessServiceManagerTests
             UserAnswer = "Here is the detail"
         };
 
-        var response = await manager.ValidateStepAsync(validation.Id, request, CancellationToken.None);
+        var response = await manager.ValidateStepAsync(validation.UserId, validation.Id, request, CancellationToken.None);
 
         Assert.True(response.IsCompleted);
         Assert.Equal(aiResponse.Score, response.Score);

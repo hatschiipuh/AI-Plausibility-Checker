@@ -58,8 +58,6 @@ public sealed class LLMPerplexityClient : ILLMClient
             this.settings.Model,
             sonarPrompt);
 
-        var a = JsonSerializer.Serialize(clientrequest, new JsonSerializerOptions { WriteIndented = true });
-
         using var response = await this.httpClient.PostAsJsonAsync(
             "chat/completions",
             clientrequest,
