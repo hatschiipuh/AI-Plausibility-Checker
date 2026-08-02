@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  business-service:
+    name: BusinessService (build & test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore BusinessService/BusinessService.sln
+
+      - name: Build
+        run: dotnet build BusinessService/BusinessService.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test BusinessService/BusinessService.sln --no-build --configuration Release
+
+  validation-scoring-service:
+    name: ValidationScoringService (build & test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore ValidationScoringService/ValidationScoringService.sln
+
+      - name: Build
+        run: dotnet build ValidationScoringService/ValidationScoringService.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test ValidationScoringService/ValidationScoringService.sln --no-build --configuration Release
+
+  client-app:
+    name: ClientApp (build & test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ClientApp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: ClientApp/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --watch=false
