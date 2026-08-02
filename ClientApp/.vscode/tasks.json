@@ -37,6 +37,27 @@
           }
         }
       }
+    },
+    {
+      "label": "start-chromium-debug",
+      "type": "shell",
+      "command": "chromium http://localhost:4200",
+      "problemMatcher": []
+    },
+    {
+      "label": "wait-for-chromium",
+      "type": "shell",
+      "command": "sleep 3",
+      "problemMatcher": []
+    },
+    {
+      "label": "attach-chromium-workflow",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "start-chromium-debug",
+        "wait-for-chromium"
+      ],
+      "problemMatcher": []
     }
   ]
 }
