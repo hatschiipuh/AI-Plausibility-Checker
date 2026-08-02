@@ -1,23 +1,18 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import {
-  AuthResponse,
   BusinessServiceClient,
   CreateValidationRequest,
-  LoginRequest,
-  RegisterRequest,
-  User,
   ValidateStepRequest,
   Validation,
   ValidationDetails,
@@ -27,6 +22,8 @@ import {
   InquiryDialogComponent,
   InquiryDialogResult
 } from './inquiry-dialog/inquiry-dialog.component';
+import { AuthService } from './auth.service';
+import { AccountMenuComponent } from './account-menu/account-menu.component';
 
 @Component({
   selector: 'app-root',
@@ -39,31 +36,25 @@ import {
     MatInputModule,
     MatButtonModule,
     MatProgressBarModule,
-    MatListModule
+    MatListModule,
+    MatIconModule,
+    AccountMenuComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
-  private static readonly accessTokenStorageKey = 'accessToken';
+  protected readonly authService = inject(AuthService);
 
   private readonly client = inject(BusinessServiceClient);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly dialog = inject(MatDialog);
   private isInquiryDialogOpen = false;
 
-  private currentUserSubject = new BehaviorSubject<User | undefined>(undefined);
-  currentUser$: Observable<User | undefined> = this.currentUserSubject.asObservable();
-  get currentUser(): User | undefined {
-    return this.currentUserSubject.value;
-  }
   currentValidation?: Validation;
   validationDetails?: ValidationDetails;
   steps: ValidationStep[] = [];
-  email = '';
-  displayName = '';
-  password = '';
   question = '';
   initialAnswer = '';
   firstInquiry = '';
@@ -72,68 +63,20 @@ export class AppComponent {
   lastExplanation?: string;
   nextInquiry?: string | null;
   isCompleted = false;
-  authErrorMessage?: string;
 
   constructor() {
-    this.restoreSession();
-  }
+    this.authService.restoreSession();
 
-  onRegister(): void {
-    const request = new RegisterRequest({
-      email: this.email.trim(),
-      displayName: this.displayName.trim(),
-      password: this.password
-    });
-
-    if (!request.email || !request.displayName || !request.password) {
-      return;
-    }
-
-    this.authErrorMessage = undefined;
-
-    this.client.register(request).subscribe({
-      next: (response) => {
-        this.applyAuthResponse(response);
-      },
-      error: (error: unknown) => {
-        this.handleAuthError(error);
+    effect(() => {
+      if (!this.authService.isAuthenticated()) {
+        this.clearValidationState();
+        this.changeDetectorRef.markForCheck();
       }
     });
-  }
-
-  onLogin(): void {
-    const request = new LoginRequest({
-      email: this.email.trim(),
-      password: this.password
-    });
-
-    if (!request.email || !request.password) {
-      return;
-    }
-
-    this.authErrorMessage = undefined;
-
-    this.client.login(request).subscribe({
-      next: (response) => {
-        this.applyAuthResponse(response);
-      },
-      error: (error: unknown) => {
-        this.handleAuthError(error);
-      }
-    });
-  }
-
-  onLogout(): void {
-    localStorage.removeItem(AppComponent.accessTokenStorageKey);
-    this.currentUserSubject.next(undefined);
-    this.password = '';
-    this.authErrorMessage = undefined;
-    this.clearValidationState();
-    this.changeDetectorRef.markForCheck();
   }
 
   onCreateValidation(): void {
-    if (!this.currentUser?.id) {
+    if (!this.authService.currentUser()?.id) {
       return;
     }
 
@@ -257,57 +200,6 @@ export class AppComponent {
 
       this.validateStep(this.currentValidation.id, inquiry, result.userAnswer);
     });
-  }
-
-  private restoreSession(): void {
-    const accessToken = localStorage.getItem(AppComponent.accessTokenStorageKey);
-    if (!accessToken) {
-      return;
-    }
-
-    this.client.me().subscribe({
-      next: (user) => {
-        this.currentUserSubject.next(user);
-        this.email = user.email ?? '';
-        this.displayName = user.displayName ?? '';
-        this.authErrorMessage = undefined;
-        this.changeDetectorRef.markForCheck();
-      },
-      error: () => {
-        localStorage.removeItem(AppComponent.accessTokenStorageKey);
-        this.currentUserSubject.next(undefined);
-        this.changeDetectorRef.markForCheck();
-      }
-    });
-  }
-
-  private applyAuthResponse(response: AuthResponse): void {
-    if (!response.accessToken || !response.user) {
-      this.authErrorMessage = 'Auth response is incomplete.';
-      this.changeDetectorRef.markForCheck();
-      return;
-    }
-
-    localStorage.setItem(AppComponent.accessTokenStorageKey, response.accessToken);
-    this.currentUserSubject.next(response.user);
-    this.email = response.user.email ?? '';
-    this.displayName = response.user.displayName ?? '';
-    this.password = '';
-    this.authErrorMessage = undefined;
-    this.clearValidationState();
-    this.changeDetectorRef.markForCheck();
-  }
-
-  private handleAuthError(error: unknown): void {
-    if (error instanceof HttpErrorResponse) {
-      this.authErrorMessage = typeof error.error === 'string'
-        ? error.error
-        : error.message;
-    } else {
-      this.authErrorMessage = 'Authentication failed.';
-    }
-
-    this.changeDetectorRef.markForCheck();
   }
 
   private clearValidationState(): void {

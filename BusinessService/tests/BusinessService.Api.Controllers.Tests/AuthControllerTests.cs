@@ -162,6 +162,49 @@ public sealed class AuthControllerTests
         Assert.IsType<NotFoundResult>(result.Result);
     }
 
+    [Fact]
+    public async Task DeleteCurrentUserAsync_ReturnsNoContent_WhenDeletionSucceeds()
+    {
+        var userId = Guid.NewGuid();
+        managerMock
+            .Setup(m => m.DeleteCurrentUserAsync(userId, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var controller = CreateController(userId);
+
+        var result = await controller.DeleteCurrentUserAsync(CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteCurrentUserAsync_ReturnsUnauthorized_WhenNoUserClaimPresent()
+    {
+        var controller = CreateController();
+
+        var result = await controller.DeleteCurrentUserAsync(CancellationToken.None);
+
+        Assert.IsType<UnauthorizedResult>(result);
+        managerMock.Verify(
+            m => m.DeleteCurrentUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteCurrentUserAsync_ReturnsNotFound_WhenManagerThrowsKeyNotFoundException()
+    {
+        var userId = Guid.NewGuid();
+        managerMock
+            .Setup(m => m.DeleteCurrentUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException());
+
+        var controller = CreateController(userId);
+
+        var result = await controller.DeleteCurrentUserAsync(CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
     private AuthController CreateController(Guid? userId = null)
     {
         var controller = new AuthController(managerMock.Object);

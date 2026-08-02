@@ -7,4 +7,5 @@
      Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken);
      Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
      Task<User> GetCurrentUserAsync(Guid currentUserId, CancellationToken cancellationToken);
+     Task DeleteCurrentUserAsync(Guid currentUserId, CancellationToken cancellationToken);
  }

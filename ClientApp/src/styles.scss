@@ -16,16 +16,57 @@ body {
 body {
 	margin: 0;
 	font-family: Roboto, 'Helvetica Neue', sans-serif;
-	background: #f4f9fb;
+	background: linear-gradient(160deg, #e0f7fa 0%, #e8f5e9 45%, #e0f2f1 100%);
+	background-attachment: fixed;
+	min-height: 100%;
 }
 
 .page-container {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: 1rem;
-	padding: 1rem;
+	gap: 1.25rem;
+	padding: 1.5rem 1rem 3rem;
 	max-width: 960px;
 	margin: 0 auto;
+}
+
+.page-container mat-card {
+	border-radius: 16px;
+	border-top: 4px solid var(--mat-sys-primary);
+	background: linear-gradient(160deg, #ffffff 0%, #e0f2f1 60%, #c8e6c9 100%);
+	box-shadow: 0 4px 16px rgba(0, 121, 107, 0.12);
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.page-container mat-card-title {
+	color: #00695c;
+}
+
+.mat-mdc-dialog-surface {
+	background: linear-gradient(160deg, #e0f2f1 0%, #c8e6c9 100%) !important;
+	border-top: 4px solid var(--mat-sys-primary);
+}
+
+.page-container mat-card:hover {
+	box-shadow: 0 8px 24px rgba(0, 121, 107, 0.18);
+	transform: translateY(-2px);
+}
+
+.empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 2rem 1rem;
+	text-align: center;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-state mat-icon {
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+	color: var(--mat-sys-primary);
 }
 
 .form-grid {

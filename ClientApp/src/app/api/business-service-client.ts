@@ -28,7 +28,11 @@ export interface IBusinessServiceClient {
     /**
      * @return OK
      */
-    me(): Observable<User>;
+    meGET(): Observable<User>;
+    /**
+     * @return OK
+     */
+    meDELETE(): Observable<void>;
     /**
      * @param body (optional) 
      * @return OK
@@ -179,7 +183,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
     /**
      * @return OK
      */
-    me(): Observable<User> {
+    meGET(): Observable<User> {
         let url_ = this.baseUrl + "/api/Auth/me";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -192,11 +196,11 @@ export class BusinessServiceClient implements IBusinessServiceClient {
         };
 
         return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processMe(response_);
+            return this.processMeGET(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processMe(response_ as any);
+                    return this.processMeGET(response_ as any);
                 } catch (e) {
                     return _observableThrow(e) as any as Observable<User>;
                 }
@@ -205,7 +209,7 @@ export class BusinessServiceClient implements IBusinessServiceClient {
         }));
     }
 
-    protected processMe(response: HttpResponseBase): Observable<User> {
+    protected processMeGET(response: HttpResponseBase): Observable<User> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -218,6 +222,53 @@ export class BusinessServiceClient implements IBusinessServiceClient {
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result200 = User.fromJS(resultData200);
             return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    meDELETE(): Observable<void> {
+        let url_ = this.baseUrl + "/api/Auth/me";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processMeDELETE(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processMeDELETE(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processMeDELETE(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
