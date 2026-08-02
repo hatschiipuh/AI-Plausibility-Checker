@@ -18,7 +18,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('mat-toolbar')?.textContent).toContain('KI‑Lügendetektor');
+    expect(compiled.querySelector('mat-toolbar')?.textContent).toContain('AI-Assisted Plausibility Checker');
   });
 
   it('should render account menu button', async () => {
