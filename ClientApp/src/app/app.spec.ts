@@ -21,10 +21,10 @@ describe('App', () => {
     expect(compiled.querySelector('mat-toolbar')?.textContent).toContain('KI‑Lügendetektor');
   });
 
-  it('should render auth title', async () => {
+  it('should render account menu button', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Authentifizierung');
+    expect(compiled.querySelector('app-account-menu')).toBeTruthy();
   });
 });

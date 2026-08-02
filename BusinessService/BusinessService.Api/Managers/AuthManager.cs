@@ -117,7 +117,27 @@
  
          return MapUser(user);
      }
- 
+
+     public async Task DeleteCurrentUserAsync(Guid currentUserId, CancellationToken cancellationToken)
+     {
+         if (currentUserId == Guid.Empty)
+         {
+             throw new ArgumentException("A valid currentUserId is required.", nameof(currentUserId));
+         }
+
+         var user = await dbContext.Users.FirstOrDefaultAsync(
+             existingUser => existingUser.Id == currentUserId,
+             cancellationToken);
+
+         if (user is null)
+         {
+             throw new KeyNotFoundException("User not found.");
+         }
+
+         dbContext.Users.Remove(user);
+         await dbContext.SaveChangesAsync(cancellationToken);
+     }
+
      private AuthResponse CreateAuthResponse(DomainUser user) =>
          new()
          {

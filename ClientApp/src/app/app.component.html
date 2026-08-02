@@ -1,67 +1,11 @@
-<mat-toolbar color="primary">KI‑Lügendetektor</mat-toolbar>
+<mat-toolbar color="primary">
+  <span>KI‑Lügendetektor</span>
+  <span class="toolbar-spacer"></span>
+  <app-account-menu />
+</mat-toolbar>
 
 <div class="page-container">
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>Authentifizierung</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Name</mat-label>
-          <input matInput [(ngModel)]="displayName" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" [(ngModel)]="email" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Passwort</mat-label>
-          <input matInput type="password" [(ngModel)]="password" />
-        </mat-form-field>
-      </div>
-
-      @if (currentUser$ | async; as currentUser) {
-        <p>Angemeldet als {{ currentUser.displayName }} ({{ currentUser.email }})</p>
-      }
-
-      @if (authErrorMessage) {
-        <p>{{ authErrorMessage }}</p>
-      }
-    </mat-card-content>
-    <mat-card-actions>
-      <button
-        mat-flat-button
-        color="primary"
-        type="button"
-        (click)="onRegister()"
-        [disabled]="!displayName.trim() || !email.trim() || !password.trim()"
-      >
-        Registrieren
-      </button>
-      <button
-        mat-stroked-button
-        color="primary"
-        type="button"
-        (click)="onLogin()"
-        [disabled]="!email.trim() || !password.trim()"
-      >
-        Login
-      </button>
-      <button
-        mat-button
-        type="button"
-        (click)="onLogout()"
-        [disabled]="!(currentUser$ | async)"
-      >
-        Logout
-      </button>
-    </mat-card-actions>
-  </mat-card>
-
-  @if (currentUser$ | async; as currentUser) {
+  @if (authService.currentUser(); as currentUser) {
     <mat-card>
       <mat-card-header>
         <mat-card-title>Ausgangsfrage</mat-card-title>
@@ -91,7 +35,17 @@
         </button>
       </mat-card-actions>
     </mat-card>
+  } @else {
+    <mat-card>
+      <mat-card-content>
+        <div class="empty-state">
+          <mat-icon>lock_person</mat-icon>
+          <p>Bitte melde dich an, um eine Validation zu starten.</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
   }
+
 
   @if (lastScore !== undefined) {
     <mat-card>
