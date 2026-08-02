@@ -1,1 +1,0 @@
-können wir noch einen Ordner tests anlegen un dort tests nach Projekten instbesondere für die Manager und die Controller ablegen? Wir wollen zum Mocken Moq und als testframework XUnit nehmen. Bitte die UnitTests dateien nicht UnitTest1 nenen sondern z.B ValidationScoringServiceManagerTests usw.
