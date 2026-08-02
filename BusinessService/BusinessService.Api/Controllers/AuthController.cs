@@ -52,6 +52,30 @@ public sealed class AuthController : ControllerBase
         return ExecuteAsync(() => manager.GetCurrentUserAsync(currentUserId, cancellationToken));
     }
 
+    [Authorize]
+    [HttpDelete("me")]
+    public async Task<ActionResult> DeleteCurrentUserAsync(CancellationToken cancellationToken)
+    {
+        if (!TryGetCurrentUserId(out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            await manager.DeleteCurrentUserAsync(currentUserId, cancellationToken).ConfigureAwait(false);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
     private async Task<ActionResult<T>> ExecuteAsync<T>(Func<Task<T>> action)
     {
         try

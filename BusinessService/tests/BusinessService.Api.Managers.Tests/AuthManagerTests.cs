@@ -174,6 +174,70 @@ public sealed class AuthManagerTests
             () => authManager.GetCurrentUserAsync(Guid.Empty, CancellationToken.None));
     }
 
+    [Fact]
+    public async Task DeleteCurrentUserAsync_RemovesUser_WhenUserExists()
+    {
+        await using var dbContext = CreateDbContext();
+        var authManager = CreateAuthManager(dbContext);
+
+        var registerResponse = await authManager.RegisterAsync(
+            new RegisterRequest { Email = "jane@example.com", DisplayName = "Jane Doe", Password = "supersecret123" },
+            CancellationToken.None);
+
+        await authManager.DeleteCurrentUserAsync(registerResponse.User.Id, CancellationToken.None);
+
+        var userExists = await dbContext.Users.AnyAsync(user => user.Id == registerResponse.User.Id);
+        Assert.False(userExists);
+    }
+
+    [Fact]
+    public async Task DeleteCurrentUserAsync_RemovesValidationsAndSteps_WhenUserHasValidations()
+    {
+        await using var dbContext = CreateDbContext();
+        var authManager = CreateAuthManager(dbContext);
+
+        var registerResponse = await authManager.RegisterAsync(
+            new RegisterRequest { Email = "jane@example.com", DisplayName = "Jane Doe", Password = "supersecret123" },
+            CancellationToken.None);
+
+        var validation = new BusinessService.Domain.Validation
+        {
+            Id = Guid.NewGuid(),
+            UserId = registerResponse.User.Id,
+            Question = "Is this true?",
+            InitialAnswer = "Yes",
+            CreatedAt = DateTime.UtcNow,
+            IsCompleted = false
+        };
+        dbContext.Validations.Add(validation);
+        await dbContext.SaveChangesAsync();
+
+        await authManager.DeleteCurrentUserAsync(registerResponse.User.Id, CancellationToken.None);
+
+        var validationExists = await dbContext.Validations.AnyAsync(v => v.Id == validation.Id);
+        Assert.False(validationExists);
+    }
+
+    [Fact]
+    public async Task DeleteCurrentUserAsync_ThrowsKeyNotFoundException_WhenUserDoesNotExist()
+    {
+        await using var dbContext = CreateDbContext();
+        var authManager = CreateAuthManager(dbContext);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => authManager.DeleteCurrentUserAsync(Guid.NewGuid(), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task DeleteCurrentUserAsync_ThrowsArgumentException_WhenCurrentUserIdIsEmpty()
+    {
+        await using var dbContext = CreateDbContext();
+        var authManager = CreateAuthManager(dbContext);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => authManager.DeleteCurrentUserAsync(Guid.Empty, CancellationToken.None));
+    }
+
     private static AuthManager CreateAuthManager(BusinessDbContext dbContext)
     {
         var jwtSettings = new JwtSettings
