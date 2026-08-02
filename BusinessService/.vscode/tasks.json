@@ -1,0 +1,28 @@
+ {
+   "version": "2.0.0",
+   "tasks": [
+     {
+       "label": "build BusinessService",
+       "type": "process",
+       "command": "dotnet",
+       "args": [
+         "build",
+         "${workspaceFolder}/BusinessService.Api/BusinessService.Api.csproj"
+       ],
+       "problemMatcher": "$msCompile",
+       "group": "build"
+     },
+     {
+       "label": "test BusinessService",
+       "type": "process",
+       "command": "dotnet",
+       "args": [
+         "test",
+         "${workspaceFolder}/BusinessService.Api/BusinessService.Api.csproj",
+         "--nologo"
+       ],
+       "problemMatcher": "$msCompile",
+       "group": "test"
+     }
+   ]
+ }
