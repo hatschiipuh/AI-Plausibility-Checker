@@ -19,67 +19,38 @@ public sealed class LLMPerplexityClient : ILLMClient
             new AuthenticationHeaderValue("Bearer", this.settings.ApiKey);
     }
 
-    public Task<LLMResultModel> EvaluateStepAsync(VSScoreStepRequest request, CancellationToken cancellationToken)
+    public async Task<LLMResultModel> EvaluateStepAsync(
+    VSScoreStepRequest request,
+    CancellationToken cancellationToken)
     {
-        var apiKey = this.settings.ApiKey
-            ?? throw new InvalidOperationException("Perplexity:ApiKey not configured.");
+        var prompt = LLMValidationPerplexitySonarPromptBuilder.Build(request);
 
-        this.httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
-
-        var requestType = ResolveRequestType(this.settings);
-
-        return requestType switch
-        {
-            LLMPerplexityRequestType.Sonar =>
-                EvaluateWithSonarAsync(request, cancellationToken),
-            _ => throw new InvalidOperationException(
-                $"Perplexity:Model '{this.settings.Model}' is not supported.")
-        };
-    }
-
-    private static LLMPerplexityRequestType ResolveRequestType(PerplexitySettings settings)
-    {
-        if (PerplexitySettings.IsSupportedModel(settings.Model))
-        {
-            return LLMPerplexityRequestType.Sonar;
-        }
-
-        throw new InvalidOperationException(
-            $"Perplexity:Model '{settings.Model}' is not supported.");
-    }
-
-     private async Task<LLMResultModel> EvaluateWithSonarAsync(
-        VSScoreStepRequest request,
-        CancellationToken cancellationToken)
-    {
-        var sonarPrompt = LLMValidationPerplexitySonarPromptBuilder.Build(request);
-        var clientrequest = LLMValidationPerplexitySonarPromptToRequestMapper.Map(
+        var clientRequest = LLMValidationPerplexityPromptToAgentRequestMapper.Map(
             this.settings.Model,
-            sonarPrompt);
+            prompt);
 
         using var response = await this.httpClient.PostAsJsonAsync(
-            "chat/completions",
-            clientrequest,
+            "v1/agent",
+            clientRequest,
             cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<SonarResponse>(
+        var payload = await response.Content.ReadFromJsonAsync<PerplexityAgentResponse>(
             cancellationToken: cancellationToken);
 
         if (payload is null)
-            throw new InvalidOperationException("Perplexity Sonar returned an empty response.");
+            throw new InvalidOperationException("Perplexity Agent API returned an empty response.");
 
         return ParseResultModel(payload);
     }
 
-    private static LLMResultModel ParseResultModel(SonarResponse response)
+    private static LLMResultModel ParseResultModel(PerplexityAgentResponse response)
     {
-        var content = response.choices?.FirstOrDefault()?.message?.content?.Trim();
+        var content = response.OutputText?.Trim();
 
         if (string.IsNullOrWhiteSpace(content))
-            throw new InvalidOperationException("Perplexity Sonar returned no content.");
+            throw new InvalidOperationException("Perplexity Agent API returned no content.");
 
         content = RemoveCodeFences(content);
 
@@ -97,9 +68,14 @@ public sealed class LLMPerplexityClient : ILLMClient
             {
                 PropertyNameCaseInsensitive = true
             });
+            
+        if (result is null)
+        {
+            throw new InvalidOperationException(
+                "Perplexity Agent API response could not be parsed into LLMResultModel.");
+        }
 
-        return result ?? throw new InvalidOperationException(
-            "Perplexity Sonar response could not be parsed into LLMResultModel.");
+        return LLMResultModelValidator.Validate(result);
     }
 
     private static string RemoveCodeFences(string content)
