@@ -8,8 +8,8 @@ The repo consists of three independent sub-projects:
 
 | Project | Description | Tech Stack |
 |---|---|---|
-| `BusinessService` | Core domain "Validation" including authentication (register/login/JWT), ownership management, persistence | ASP.NET Core 8 Web API, EF Core (SQLite) |
-| `ValidationScoringService` | Encapsulates the LLM integration (Perplexity Agent API), performs the actual scoring/evaluation | ASP.NET Core 8 Web API |
+| `BusinessService` | Core domain "Validation" including authentication (register/login/JWT), ownership management, persistence | ASP.NET Core 10 Web API, EF Core (SQLite) |
+| `ValidationScoringService` | Encapsulates the LLM integration (Perplexity Agent API), performs the actual scoring/evaluation | ASP.NET Core 10 Web API |
 | `ClientApp` | Single-page frontend with login, account management, and the validation flow | Angular 21 (standalone components, signals), Angular Material |
 
 `BusinessService` calls `ValidationScoringService` synchronously over REST to request a scoring result. `ClientApp` talks exclusively to `BusinessService` (via a generated NSwag client) and authenticates using JWT.
@@ -20,7 +20,7 @@ ClientApp  --HTTP/JWT-->  BusinessService  --HTTP-->  ValidationScoringService  
 
 ## Prerequisites
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Node.js + npm
 - (optional) `dotnet-ef` CLI tool for migrations
 
