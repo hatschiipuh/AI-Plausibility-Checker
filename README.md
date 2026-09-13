@@ -9,7 +9,7 @@ The repo consists of three independent sub-projects:
 | Project | Description | Tech Stack |
 |---|---|---|
 | `BusinessService` | Core domain "Validation" including authentication (register/login/JWT), ownership management, persistence | ASP.NET Core 8 Web API, EF Core (SQLite) |
-| `ValidationScoringService` | Encapsulates the LLM integration (Perplexity Sonar API), performs the actual scoring/evaluation | ASP.NET Core 8 Web API |
+| `ValidationScoringService` | Encapsulates the LLM integration (Perplexity Agent API), performs the actual scoring/evaluation | ASP.NET Core 8 Web API |
 | `ClientApp` | Single-page frontend with login, account management, and the validation flow | Angular 21 (standalone components, signals), Angular Material |
 
 `BusinessService` calls `ValidationScoringService` synchronously over REST to request a scoring result. `ClientApp` talks exclusively to `BusinessService` (via a generated NSwag client) and authenticates using JWT.
@@ -23,6 +23,30 @@ ClientApp  --HTTP/JWT-->  BusinessService  --HTTP-->  ValidationScoringService  
 - .NET 8 SDK
 - Node.js + npm
 - (optional) `dotnet-ef` CLI tool for migrations
+
+## Docker Compose
+
+Docker Engine with the Compose v2 plugin is required. Create a `.env` file in the repository root before starting the stack:
+
+```dotenv
+PERPLEXITY_API_KEY=<your-perplexity-api-key>
+JWT_SIGNING_KEY=<long-local-signing-key>
+```
+
+The `.env` file is ignored by Git and must not be committed. Generate a local signing key, for example, with:
+
+```bash
+openssl rand -hex 32
+```
+
+Validate the Compose configuration and start all services:
+
+```bash
+docker compose config --quiet
+docker compose up --build
+```
+
+The application is then available at `http://localhost:4200`. The backend APIs are exposed at `http://localhost:5030` (BusinessService) and `http://localhost:5040` (ValidationScoringService). The SQLite database is stored in the named `business-data` volume. `docker compose down` keeps the data; `docker compose down -v` removes the volume and its data.
 
 ## Setup & Run
 
