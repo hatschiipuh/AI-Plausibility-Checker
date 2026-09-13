@@ -13,7 +13,7 @@ public sealed class PerplexitySettingsValidationTests
         var configuration = BuildConfiguration(
             apiKey: "test-key",
             baseUrl: "https://api.perplexity.ai",
-            model: "sonar");
+            model: "perplexity/sonar");
 
         using var serviceProvider = CreateServiceProvider(configuration);
 
@@ -21,7 +21,7 @@ public sealed class PerplexitySettingsValidationTests
 
         Assert.Equal("test-key", settings.ApiKey);
         Assert.Equal("https://api.perplexity.ai", settings.BaseUrl);
-        Assert.Equal("sonar", settings.Model);
+        Assert.Equal("perplexity/sonar", settings.Model);
     }
 
     [Fact]
