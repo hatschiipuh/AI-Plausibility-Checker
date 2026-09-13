@@ -46,7 +46,7 @@ docker compose config --quiet
 docker compose up --build
 ```
 
-The application is then available at `http://localhost:4200`. The backend APIs are exposed at `http://localhost:5030` (BusinessService) and `http://localhost:5040` (ValidationScoringService). The SQLite database is stored in the named `business-data` volume. `docker compose down` keeps the data; `docker compose down -v` removes the volume and its data.
+The application is then available at `http://localhost:4200`. The BusinessService API is exposed at `http://localhost:5030`; the ValidationScoringService is reachable only inside the Compose backend network and is not published on a host port. The SQLite database is stored in the named `business-data` volume. `docker compose down` keeps the data; `docker compose down -v` removes the volume and its data.
 
 ## Setup & Run
 
@@ -56,8 +56,11 @@ The application is then available at `http://localhost:4200`. The backend APIs a
 cd BusinessService
 dotnet build BusinessService.sln
 dotnet ef database update --project BusinessService.Infrastructure --startup-project BusinessService.Api
+dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -hex 32)" --project BusinessService.Api
 dotnet run --project BusinessService.Api
 ```
+
+The JWT signing key is intentionally not stored in `appsettings.json`. Configure it through .NET User Secrets for local development or through the `Jwt__SigningKey` environment variable in a deployment.
 
 Runs by default at `https://localhost:5030` (HTTPS) / `http://localhost:5031` (HTTP). Uses a local SQLite database (`business.db`).
 
