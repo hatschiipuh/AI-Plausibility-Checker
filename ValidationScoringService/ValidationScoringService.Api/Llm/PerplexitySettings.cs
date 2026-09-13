@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 public sealed class PerplexitySettings
 {
     public static IReadOnlyCollection<string> SupportedModels { get; } =
-        ["sonar"];
+        ["perplexity/sonar"];
 
     [Required]
     public string ApiKey { get; set; } = string.Empty;
@@ -13,7 +13,8 @@ public sealed class PerplexitySettings
     public string BaseUrl { get; set; } = "https://api.perplexity.ai";
 
     [Required]
-    public string Model  { get; set; } = "sonar";
+    
+    public string Model  { get; set; } = "perplexity/sonar";
 
     public static bool IsSupportedModel(string? model)
     {
