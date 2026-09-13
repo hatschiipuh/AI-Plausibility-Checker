@@ -47,14 +47,23 @@ public sealed class LLMPerplexityClient : ILLMClient
 
     private static LLMResultModel ParseResultModel(PerplexityAgentResponse response)
     {
-        var content = response.OutputText?.Trim();
+        var responseText = string.Join(
+        Environment.NewLine,
+            response.Output?
+                .Where(item =>
+                    item.Type == "message" &&
+                    item.Role == "assistant")
+                .SelectMany(item => item.Content)
+                .Where(item => item.Type == "output_text")
+                .Select(item => item.Text?.Trim())
+                .OfType<string>() ?? new List<string>());
 
-        if (string.IsNullOrWhiteSpace(content))
+        if (string.IsNullOrWhiteSpace(responseText))
             throw new InvalidOperationException("Perplexity Agent API returned no content.");
 
-        content = RemoveCodeFences(content);
+        responseText = RemoveCodeFences(responseText);
 
-        var normalizedContent = content.Trim();
+        var normalizedContent = responseText.Trim();
         
         if (normalizedContent.StartsWith('"'))
         {

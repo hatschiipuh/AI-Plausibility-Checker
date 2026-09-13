@@ -2,6 +2,6 @@ using System.Text.Json.Serialization;
 
 public sealed class PerplexityAgentResponse
 {
-    [JsonPropertyName("output_text")]
-    public string? OutputText { get; init; }
+    [JsonPropertyName("output")]
+    public IEnumerable<PerplexityAgentOutput>? Output { get; init; }
 }

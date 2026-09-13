@@ -14,7 +14,18 @@ public sealed class LLMPerplexityClientTests
     {
         const string responseBody = """
             {
-              "output_text": "{\"score\":0.8,\"explanation\":\"The answer is detailed.\",\"isFinal\":true,\"nextInquiry\":null}"
+                "output": [
+                    {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                        "type": "output_text",
+                        "text": "{\"score\":0.8,\"explanation\":\"The answer is detailed.\",\"isFinal\":true,\"nextInquiry\":null}"
+                        }
+                    ]
+                    }
+                ]
             }
             """;
 
