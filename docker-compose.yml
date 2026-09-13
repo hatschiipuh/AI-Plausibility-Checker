@@ -9,8 +9,10 @@ services:
       Perplexity__BaseUrl: https://api.perplexity.ai
       Perplexity__Model: perplexity/sonar
       Perplexity__ApiKey: "${PERPLEXITY_API_KEY:?PERPLEXITY_API_KEY must be set}"
-    ports:
-      - "5040:8080"
+    expose:
+      - "8080"
+    networks:
+      - backend
 
   business-service:
     build:
@@ -28,6 +30,9 @@ services:
       - business-data:/data
     ports:
       - "5030:8080"
+    networks:
+      - frontend
+      - backend
 
   client-app:
     build:
@@ -37,6 +42,12 @@ services:
       - business-service
     ports:
       - "4200:80"
+    networks:
+      - frontend
 
 volumes:
   business-data:
+
+networks:
+  frontend:
+  backend:
