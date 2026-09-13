@@ -1,0 +1,6 @@
+BusinessService.Infrastructure/*.db*
+**/bin/
+**/obj/
+**/.vscode/
+.git/
+.gitignore

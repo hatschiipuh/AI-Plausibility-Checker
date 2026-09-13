@@ -1,0 +1,42 @@
+services:
+  validation-scoring-service:
+    build:
+      context: ./ValidationScoringService
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Perplexity__BaseUrl: https://api.perplexity.ai
+      Perplexity__Model: perplexity/sonar
+      Perplexity__ApiKey: "${PERPLEXITY_API_KEY:?PERPLEXITY_API_KEY must be set}"
+    ports:
+      - "5040:8080"
+
+  business-service:
+    build:
+      context: ./BusinessService
+      dockerfile: Dockerfile
+    depends_on:
+      - validation-scoring-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Business: "Data Source=/data/business.db"
+      ValidationScoringService__BaseUrl: http://validation-scoring-service:8080
+      Jwt__SigningKey: "${JWT_SIGNING_KEY:?JWT_SIGNING_KEY must be set}"
+    volumes:
+      - business-data:/data
+    ports:
+      - "5030:8080"
+
+  client-app:
+    build:
+      context: ./ClientApp
+      dockerfile: Dockerfile
+    depends_on:
+      - business-service
+    ports:
+      - "4200:80"
+
+volumes:
+  business-data:
