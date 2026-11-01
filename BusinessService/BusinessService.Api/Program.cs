@@ -84,7 +84,7 @@ builder.Services.AddHttpClient("ValidationScoringService", client =>
     client.BaseAddress = new Uri(validationScoringBaseUrl);
 });
 
-builder.Services.AddScoped<BusinessService.Api.Clients.ValidationScoringService.IValidationScoringServiceClient>(sp =>
+builder.Services.AddScoped<IValidationScoringServiceClient>(sp =>
 {
     var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
     var httpClient = httpClientFactory.CreateClient("ValidationScoringService");

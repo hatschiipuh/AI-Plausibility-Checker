@@ -6,6 +6,6 @@
     "generate-validationScoringService": "nswag run ValidationScoringService.json"
   },
   "devDependencies": {
-    "nswag": "latest"
+    "nswag": "14.7.1"
   }
 }
