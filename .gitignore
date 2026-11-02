@@ -1,5 +1,6 @@
 [Bb]in/
 [Oo]bj/
+node_modules/
 BusinessService/BusinessService.Infrastructure/business.db
 BusinessService/BusinessService.Infrastructure/business.db-shm
 BusinessService/BusinessService.Infrastructure/business.db-wal

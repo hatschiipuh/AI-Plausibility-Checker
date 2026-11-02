@@ -12,6 +12,10 @@ public class LLMValidationPromptBuilder
             {
                 Question = request.Question,
                 InitialAnswer = request.InitialAnswer,
+                MaximumFollowUpQuestions = ValidationInputLimits.MaximumFollowUpQuestions,
+                FollowUpQuestionsAsked = request.Inquiries.Count,
+                RemainingFollowUpQuestions =
+                    ValidationInputLimits.MaximumFollowUpQuestions - request.Inquiries.Count,
                 Inquiries = request.Inquiries.Select(i => new LLMValidationPromptInquiry
                 {
                     Inquiry = i.Inquiry,

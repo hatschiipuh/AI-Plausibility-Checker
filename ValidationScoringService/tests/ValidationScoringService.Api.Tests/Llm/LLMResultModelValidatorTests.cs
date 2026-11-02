@@ -1,3 +1,5 @@
+using ValidationScoringService.Api.Contracts;
+
 namespace ValidationScoringService.Api.Tests.Llm;
 
 public sealed class LLMResultModelValidatorTests
@@ -85,6 +87,36 @@ public sealed class LLMResultModelValidatorTests
             Score = 0.5,
             Explanation = "More information is needed.",
             IsFinal = false
+        };
+
+        Assert.Throws<InvalidOperationException>(
+            () => LLMResultModelValidator.Validate(result));
+    }
+
+    [Fact]
+    public void Validate_WithNoRemainingFollowUpQuestions_AllowsMissingNextInquiry()
+    {
+        var result = new LLMResultModel
+        {
+            Score = 0.5,
+            Explanation = "The answer has been assessed.",
+            IsFinal = false
+        };
+
+        var validatedResult = LLMResultModelValidator.Validate(result, followUpQuestionAllowed: false);
+
+        Assert.Same(result, validatedResult);
+    }
+
+    [Fact]
+    public void Validate_WithOverlongNextInquiry_ThrowsInvalidOperationException()
+    {
+        var result = new LLMResultModel
+        {
+            Score = 0.5,
+            Explanation = "More information is needed.",
+            IsFinal = false,
+            NextInquiry = new string('q', ValidationInputLimits.MaximumInquiryCharacters + 1)
         };
 
         Assert.Throws<InvalidOperationException>(

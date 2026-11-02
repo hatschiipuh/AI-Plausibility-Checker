@@ -1,6 +1,10 @@
+using ValidationScoringService.Api.Contracts;
+
 public static class LLMResultModelValidator
 {
-    public static LLMResultModel Validate(LLMResultModel? result)
+    public static LLMResultModel Validate(
+        LLMResultModel? result,
+        bool followUpQuestionAllowed = true)
     {
         ArgumentNullException.ThrowIfNull(result);
 
@@ -19,7 +23,15 @@ public static class LLMResultModelValidator
                 "The LLM response contains no explanation.");
         }
 
-        if (!result.IsFinal && string.IsNullOrWhiteSpace(result.NextInquiry))
+        if (result.NextInquiry?.Length > ValidationInputLimits.MaximumInquiryCharacters)
+        {
+            throw new InvalidOperationException(
+                $"The LLM response contains a follow-up question longer than {ValidationInputLimits.MaximumInquiryCharacters} characters.");
+        }
+
+        if (!result.IsFinal
+            && followUpQuestionAllowed
+            && string.IsNullOrWhiteSpace(result.NextInquiry))
         {
             throw new InvalidOperationException(
                 "A non-final LLM response must contain a next inquiry.");

@@ -1,3 +1,5 @@
+using ValidationScoringService.Api.Contracts;
+
 namespace ValidationScoringService.Api.Tests.Llm;
 
 public sealed class PerplexityResponseFormatFactoryTests
@@ -42,5 +44,16 @@ public sealed class PerplexityResponseFormatFactoryTests
             .ToArray();
 
         Assert.Equal(["string", "null"], nextInquiryTypes);
+
+        var nextInquiryStringSchema = schema
+            .GetProperty("properties")
+            .GetProperty("nextInquiry")
+            .GetProperty("anyOf")
+            .EnumerateArray()
+            .Single(type => type.GetProperty("type").GetString() == "string");
+
+        Assert.Equal(
+            ValidationInputLimits.MaximumInquiryCharacters,
+            nextInquiryStringSchema.GetProperty("maxLength").GetInt32());
     }
 }
