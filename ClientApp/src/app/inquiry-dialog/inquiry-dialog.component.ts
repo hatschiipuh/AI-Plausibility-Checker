@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { VALIDATION_INPUT_LIMITS } from '../validation-input-limits';
 
 export interface InquiryDialogData {
   inquiry: string;
@@ -24,6 +25,7 @@ export interface InquiryDialogResult {
 })
 export class InquiryDialogComponent {
   readonly data = inject<InquiryDialogData>(MAT_DIALOG_DATA);
+  readonly inputLimits = VALIDATION_INPUT_LIMITS;
 
   private readonly dialogRef = inject(MatDialogRef<InquiryDialogComponent, InquiryDialogResult>);
 

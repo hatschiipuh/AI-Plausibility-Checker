@@ -39,6 +39,28 @@ public sealed class ValidationScoringManagerTests
             new Action<VSScoreStepRequest>(request => request.InitialAnswer = string.Empty),
             "InitialAnswer"
         };
+
+        yield return new object[]
+        {
+            new Action<VSScoreStepRequest>(request =>
+                request.Question = new string('q', ValidationInputLimits.MaximumQuestionCharacters + 1)),
+            "Question"
+        };
+
+        yield return new object[]
+        {
+            new Action<VSScoreStepRequest>(request =>
+                request.Inquiries =
+                [
+                    .. Enumerable.Range(0, ValidationInputLimits.MaximumFollowUpQuestions + 1)
+                        .Select(_ => new VSScoreStepRequestInquiry
+                        {
+                            Inquiry = "Follow-up question",
+                            UserAnswer = "Follow-up answer"
+                        })
+                ]),
+            "follow-up questions"
+        };
     }
 
     [Theory]
@@ -81,7 +103,64 @@ public sealed class ValidationScoringManagerTests
         Assert.Equal(modelResult.Score, response.Score);
         Assert.Equal(modelResult.Explanation, response.AiExplanation);
         Assert.Equal(modelResult.IsFinal, response.IsFinal);
-        Assert.Equal(modelResult.NextInquiry, response.NextInquiry);
+        Assert.Null(response.NextInquiry);
         llmClientMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ScoreStepAsync_AtFollowUpQuestionLimit_ForcesFinalResponse()
+    {
+        var request = AiScoreStepRequestBuilder.CreateValidRequest();
+        request.Inquiries =
+        [
+            .. Enumerable.Range(0, ValidationInputLimits.MaximumFollowUpQuestions)
+                .Select(index => new VSScoreStepRequestInquiry
+                {
+                    Inquiry = $"Follow-up question {index + 1}",
+                    UserAnswer = "Follow-up answer"
+                })
+        ];
+
+        var llmClientMock = new Mock<ILLMClient>(MockBehavior.Strict);
+        llmClientMock
+            .Setup(client => client.EvaluateStepAsync(request, CancellationToken.None))
+            .ReturnsAsync(new LLMResultModel
+            {
+                Score = 0.6,
+                Explanation = "The answer has been assessed.",
+                IsFinal = false,
+                NextInquiry = "This must not be returned."
+            });
+
+        var manager = new ValidationScoringManager(llmClientMock.Object);
+
+        var response = await manager.ScoreStepAsync(request, CancellationToken.None);
+
+        Assert.True(response.IsFinal);
+        Assert.Null(response.NextInquiry);
+        llmClientMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ScoreStepAsync_WhenPromptHistoryExceedsCharacterLimit_ThrowsBeforeCallingLlm()
+    {
+        var request = AiScoreStepRequestBuilder.CreateValidRequest();
+        request.Inquiries =
+        [
+            .. Enumerable.Range(0, 4)
+                .Select(_ => new VSScoreStepRequestInquiry
+                {
+                    Inquiry = new string('q', ValidationInputLimits.MaximumInquiryCharacters),
+                    UserAnswer = new string('a', ValidationInputLimits.MaximumUserAnswerCharacters)
+                })
+        ];
+
+        var llmClientMock = new Mock<ILLMClient>(MockBehavior.Strict);
+        var manager = new ValidationScoringManager(llmClientMock.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => manager.ScoreStepAsync(request, CancellationToken.None));
+
+        llmClientMock.VerifyNoOtherCalls();
     }
 }

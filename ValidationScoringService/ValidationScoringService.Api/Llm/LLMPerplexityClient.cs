@@ -42,10 +42,15 @@ public sealed class LLMPerplexityClient : ILLMClient
         if (payload is null)
             throw new InvalidOperationException("Perplexity Agent API returned an empty response.");
 
-        return ParseResultModel(payload);
+        var followUpQuestionAllowed =
+            request.Inquiries.Count < ValidationInputLimits.MaximumFollowUpQuestions;
+
+        return ParseResultModel(payload, followUpQuestionAllowed);
     }
 
-    private static LLMResultModel ParseResultModel(PerplexityAgentResponse response)
+    private static LLMResultModel ParseResultModel(
+        PerplexityAgentResponse response,
+        bool followUpQuestionAllowed)
     {
         var responseText = string.Join(
         Environment.NewLine,
@@ -84,7 +89,7 @@ public sealed class LLMPerplexityClient : ILLMClient
                 "Perplexity Agent API response could not be parsed into LLMResultModel.");
         }
 
-        return LLMResultModelValidator.Validate(result);
+        return LLMResultModelValidator.Validate(result, followUpQuestionAllowed);
     }
 
     private static string RemoveCodeFences(string content)

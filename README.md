@@ -26,11 +26,10 @@ ClientApp  --HTTP/JWT-->  BusinessService  --HTTP-->  ValidationScoringService  
 
 ## Docker Compose
 
-Docker Engine with the Compose v2 plugin is required. Create a `.env` file in the repository root before starting the stack:
+Docker Engine with the Compose v2 plugin is required. Create the local environment file from the example and replace both placeholder values before starting the stack:
 
-```dotenv
-PERPLEXITY_API_KEY=<your-perplexity-api-key>
-JWT_SIGNING_KEY=<long-local-signing-key>
+```bash
+cp .env.example .env
 ```
 
 The `.env` file is ignored by Git and must not be committed. Generate a local signing key, for example, with:
@@ -38,6 +37,8 @@ The `.env` file is ignored by Git and must not be committed. Generate a local si
 ```bash
 openssl rand -hex 32
 ```
+
+Use the generated value for `JWT_SIGNING_KEY` in `.env` and set `PERPLEXITY_API_KEY` to your own key.
 
 Validate the Compose configuration and start all services:
 
@@ -80,7 +81,7 @@ Runs by default at `https://localhost:5040` (HTTPS) / `http://localhost:5041` (H
 
 ```bash
 cd ClientApp
-npm install
+npm ci
 npm start
 ```
 
@@ -118,7 +119,18 @@ The TypeScript client for `ClientApp` is generated from `BusinessService`'s Open
 
 ```bash
 cd ClientApp
+npm ci
 npm run generate:businessServiceClient-client
 ```
 
 Prerequisite: `BusinessService` must be running so the OpenAPI specification can be fetched.
+
+The C# client used by `BusinessService` is generated from `ValidationScoringService`'s OpenAPI specification:
+
+```bash
+cd BusinessService/BusinessService.Api/Clients/ValidationScoringService
+npm ci
+npm run generate-validationScoringService
+```
+
+Prerequisite: `ValidationScoringService` must be running locally at `http://localhost:5041`. Both generated clients are source artifacts and must be regenerated with NSwag after their OpenAPI configuration changes.
