@@ -5,6 +5,26 @@
 </mat-toolbar>
 
 <div class="page-container">
+  @if (isBusy) {
+    <mat-progress-bar mode="indeterminate" aria-label="Anfrage wird verarbeitet"></mat-progress-bar>
+  }
+
+  @if (errorMessage) {
+    <section class="request-error" aria-label="Fehler bei der Anfrage">
+      <p role="alert">{{ errorMessage }}</p>
+      @if (canRetryStep) {
+        <button mat-stroked-button type="button" (click)="retryPendingStep()">
+          Bewertung erneut versuchen
+        </button>
+      }
+      @if (canRetryDetails) {
+        <button mat-stroked-button type="button" (click)="retryLoadValidationDetails()">
+          Verlauf erneut laden
+        </button>
+      }
+    </section>
+  }
+
   @if (authService.currentUser(); as currentUser) {
     <mat-card>
       <mat-card-header>
@@ -18,9 +38,12 @@
               matInput
               rows="4"
               [maxlength]="inputLimits.maximumQuestionCharacters"
+              [disabled]="isBusy"
               [(ngModel)]="question"
             ></textarea>
-            <mat-hint align="end">{{ question.length }}/{{ inputLimits.maximumQuestionCharacters }}</mat-hint>
+            <mat-hint align="end"
+              >{{ question.length }}/{{ inputLimits.maximumQuestionCharacters }}</mat-hint
+            >
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="col-span-2">
@@ -29,9 +52,12 @@
               matInput
               rows="4"
               [maxlength]="inputLimits.maximumInitialAnswerCharacters"
+              [disabled]="isBusy"
               [(ngModel)]="initialAnswer"
             ></textarea>
-            <mat-hint align="end">{{ initialAnswer.length }}/{{ inputLimits.maximumInitialAnswerCharacters }}</mat-hint>
+            <mat-hint align="end"
+              >{{ initialAnswer.length }}/{{ inputLimits.maximumInitialAnswerCharacters }}</mat-hint
+            >
           </mat-form-field>
         </div>
       </mat-card-content>
@@ -41,9 +67,17 @@
           color="primary"
           type="button"
           (click)="onCreateValidation()"
-          [disabled]="!question.trim() || !initialAnswer.trim()"
+          [disabled]="isBusy || !question.trim() || !initialAnswer.trim()"
         >
-          Validation starten
+          @if (isCreatingValidation) {
+            Validation wird erstellt …
+          } @else if (isValidating) {
+            Antwort wird bewertet …
+          } @else if (isLoadingDetails) {
+            Verlauf wird geladen …
+          } @else {
+            Validation starten
+          }
         </button>
       </mat-card-actions>
     </mat-card>
@@ -58,7 +92,6 @@
     </mat-card>
   }
 
-
   @if (lastScore !== undefined) {
     <mat-card>
       <mat-card-header>
@@ -66,7 +99,7 @@
       </mat-card-header>
       <mat-card-content>
         <mat-progress-bar mode="determinate" [value]="lastScore * 100"></mat-progress-bar>
-        <p>Score: {{ lastScore | number:'1.2-2' }}</p>
+        <p>Score: {{ lastScore | number: '1.2-2' }}</p>
         <p>AI-Erklärung: {{ lastExplanation || '-' }}</p>
       </mat-card-content>
     </mat-card>
