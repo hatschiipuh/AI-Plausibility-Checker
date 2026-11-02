@@ -289,13 +289,19 @@ namespace BusinessService.Api.Clients.ValidationScoringService
         public System.Guid ValidationId { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("question")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(2000)]
         public string Question { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("initialAnswer")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(8000)]
         public string InitialAnswer { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("inquiries")]
-        public System.Collections.Generic.ICollection<VSScoreStepRequestInquiry> Inquiries { get; set; }
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MaxLength(10)]
+        public System.Collections.Generic.ICollection<VSScoreStepRequestInquiry> Inquiries { get; set; } = new System.Collections.ObjectModel.Collection<VSScoreStepRequestInquiry>();
 
     }
 
@@ -304,9 +310,13 @@ namespace BusinessService.Api.Clients.ValidationScoringService
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("inquiry")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(2000)]
         public string Inquiry { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("userAnswer")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(8000)]
         public string UserAnswer { get; set; }
 
     }

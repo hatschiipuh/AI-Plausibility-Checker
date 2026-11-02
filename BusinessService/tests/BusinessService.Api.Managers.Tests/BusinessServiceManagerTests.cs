@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using User = BusinessService.Domain.User;
 using Validation = BusinessService.Domain.Validation;
+using ValidationStep = BusinessService.Domain.ValidationStep;
 namespace BusinessService.Api.Managers.Tests;
 
 public sealed class BusinessServiceManagerTests
@@ -53,6 +54,21 @@ public sealed class BusinessServiceManagerTests
     }
 
     [Fact]
+    public async Task CreateValidationAsync_RejectsQuestionLongerThanLimit()
+    {
+        await using var dbContext = CreateDbContext();
+        var manager = new BusinessServiceManager(dbContext, Mock.Of<IValidationScoringServiceClient>());
+        var request = new CreateValidationRequest
+        {
+            Question = new string('q', ValidationInputLimits.MaximumQuestionCharacters + 1),
+            InitialAnswer = "Initial answer"
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => manager.CreateValidationAsync(Guid.NewGuid(), request, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task ValidateStepAsync_CompletesValidation_WhenAiMarksFinal()
     {
         await using var dbContext = CreateDbContext();
@@ -91,7 +107,8 @@ public sealed class BusinessServiceManagerTests
             .FirstAsync(v => v.Id == validation.Id, CancellationToken.None);
 
         Assert.True(reloaded.IsCompleted);
-        var step = Assert.Single(reloaded.Steps);
+        Assert.Equal(2, reloaded.Steps.Count);
+        var step = reloaded.Steps.Single(existingStep => existingStep.Inquiry == request.Inquiry);
         Assert.Equal(aiResponse.Score, step.Score);
         Assert.Equal(aiResponse.AiExplanation, step.AiExplanation);
         Assert.Equal(request.Inquiry, step.Inquiry);
@@ -100,6 +117,82 @@ public sealed class BusinessServiceManagerTests
         var inquiry = Assert.Single(capturedRequest!.Inquiries);
         Assert.Equal(request.Inquiry, inquiry.Inquiry);
         Assert.Equal(request.UserAnswer, inquiry.UserAnswer);
+    }
+
+    [Fact]
+    public async Task ValidateStepAsync_RejectsEleventhFollowUpBeforeCallingScoringService()
+    {
+        await using var dbContext = CreateDbContext();
+        var validation = await SeedValidationAsync(dbContext);
+        var initialStep = validation.Steps.Single();
+
+        for (var index = 0; index < ValidationInputLimits.MaximumFollowUpQuestions; index++)
+        {
+            dbContext.ValidationSteps.Add(new ValidationStep
+            {
+                Id = Guid.NewGuid(),
+                ValidationId = validation.Id,
+                CreatedAt = initialStep.CreatedAt.AddSeconds(index + 1),
+                Inquiry = $"Follow-up {index + 1}",
+                UserAnswer = "Answer"
+            });
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        var aiClient = new Mock<IValidationScoringServiceClient>(MockBehavior.Strict);
+        var manager = new BusinessServiceManager(dbContext, aiClient.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => manager.ValidateStepAsync(
+                validation.UserId,
+                validation.Id,
+                new ValidateStepRequest
+                {
+                    Inquiry = "One more question?",
+                    UserAnswer = "One more answer"
+                },
+                CancellationToken.None));
+
+        aiClient.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ValidateStepAsync_RejectsPromptHistoryOverCharacterLimitBeforeCallingScoringService()
+    {
+        await using var dbContext = CreateDbContext();
+        var validation = await SeedValidationAsync(dbContext);
+        var initialStep = validation.Steps.Single();
+
+        for (var index = 0; index < 4; index++)
+        {
+            dbContext.ValidationSteps.Add(new ValidationStep
+            {
+                Id = Guid.NewGuid(),
+                ValidationId = validation.Id,
+                CreatedAt = initialStep.CreatedAt.AddSeconds(index + 1),
+                Inquiry = new string('q', ValidationInputLimits.MaximumInquiryCharacters),
+                UserAnswer = new string('a', ValidationInputLimits.MaximumUserAnswerCharacters)
+            });
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        var aiClient = new Mock<IValidationScoringServiceClient>(MockBehavior.Strict);
+        var manager = new BusinessServiceManager(dbContext, aiClient.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => manager.ValidateStepAsync(
+                validation.UserId,
+                validation.Id,
+                new ValidateStepRequest
+                {
+                    Inquiry = "Another question?",
+                    UserAnswer = "Another answer"
+                },
+                CancellationToken.None));
+
+        aiClient.VerifyNoOtherCalls();
     }
 
     private static async Task<Validation> SeedValidationAsync(BusinessDbContext dbContext)
@@ -120,6 +213,14 @@ public sealed class BusinessServiceManagerTests
             CreatedAt = DateTime.UtcNow,
             IsCompleted = false
         };
+        validation.Steps.Add(new ValidationStep
+        {
+            Id = Guid.NewGuid(),
+            ValidationId = validation.Id,
+            CreatedAt = validation.CreatedAt,
+            Inquiry = validation.Question,
+            UserAnswer = validation.InitialAnswer
+        });
 
         dbContext.Users.Add(user);
         dbContext.Validations.Add(validation);

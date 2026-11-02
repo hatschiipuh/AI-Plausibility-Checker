@@ -1,5 +1,6 @@
 
 using System.Text.Json;
+using ValidationScoringService.Api.Contracts;
 
 public static class PerplexityResponseFormatFactory
 {
@@ -28,7 +29,11 @@ public static class PerplexityResponseFormatFactory
                 {
                     anyOf = new object[]
                     {
-                        new { type = "string" },
+                        new
+                        {
+                            type = "string",
+                            maxLength = ValidationInputLimits.MaximumInquiryCharacters
+                        },
                         new { type = "null" }
                     }
                 }

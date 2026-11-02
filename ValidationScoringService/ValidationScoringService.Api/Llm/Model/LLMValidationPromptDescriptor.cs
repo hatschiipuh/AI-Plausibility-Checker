@@ -4,4 +4,7 @@ public class LLMValidationPromptDescriptor{
      public string Inquiry { get; init; } = "a follow-up question used to clarify or test consistency";
      public string UserAnswer { get; init; } = "the answer provided by the user to the follow-up inquiry";
      public string Inquiries { get; init; } = "chronological follow-up inquiry turns";
+     public string MaximumFollowUpQuestions { get; init; } = "maximum number of follow-up questions the AI may ask";
+     public string FollowUpQuestionsAsked { get; init; } = "number of follow-up questions already answered";
+     public string RemainingFollowUpQuestions { get; init; } = "number of additional follow-up questions the AI may ask";
  }

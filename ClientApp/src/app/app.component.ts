@@ -24,6 +24,7 @@ import {
 } from './inquiry-dialog/inquiry-dialog.component';
 import { AuthService } from './auth.service';
 import { AccountMenuComponent } from './account-menu/account-menu.component';
+import { VALIDATION_INPUT_LIMITS } from './validation-input-limits';
 
 @Component({
   selector: 'app-root',
@@ -46,6 +47,7 @@ import { AccountMenuComponent } from './account-menu/account-menu.component';
 })
 export class AppComponent {
   protected readonly authService = inject(AuthService);
+  protected readonly inputLimits = VALIDATION_INPUT_LIMITS;
 
   private readonly client = inject(BusinessServiceClient);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);

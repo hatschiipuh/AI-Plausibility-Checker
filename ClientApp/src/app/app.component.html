@@ -14,12 +14,24 @@
         <div class="form-grid">
           <mat-form-field appearance="outline" class="col-span-2">
             <mat-label>Originale Frage</mat-label>
-            <textarea matInput rows="4" [(ngModel)]="question"></textarea>
+            <textarea
+              matInput
+              rows="4"
+              [maxlength]="inputLimits.maximumQuestionCharacters"
+              [(ngModel)]="question"
+            ></textarea>
+            <mat-hint align="end">{{ question.length }}/{{ inputLimits.maximumQuestionCharacters }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="col-span-2">
             <mat-label>Antwort des Users</mat-label>
-            <textarea matInput rows="4" [(ngModel)]="initialAnswer"></textarea>
+            <textarea
+              matInput
+              rows="4"
+              [maxlength]="inputLimits.maximumInitialAnswerCharacters"
+              [(ngModel)]="initialAnswer"
+            ></textarea>
+            <mat-hint align="end">{{ initialAnswer.length }}/{{ inputLimits.maximumInitialAnswerCharacters }}</mat-hint>
           </mat-form-field>
         </div>
       </mat-card-content>

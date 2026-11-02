@@ -9,9 +9,11 @@
     <textarea
       matInput
       rows="5"
+      [maxlength]="inputLimits.maximumUserAnswerCharacters"
       [(ngModel)]="userAnswer"
       placeholder="Antwort eingeben"
     ></textarea>
+    <mat-hint align="end">{{ userAnswer.length }}/{{ inputLimits.maximumUserAnswerCharacters }}</mat-hint>
   </mat-form-field>
 </mat-dialog-content>
 

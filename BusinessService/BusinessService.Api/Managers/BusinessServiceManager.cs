@@ -34,6 +34,20 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             throw new ArgumentException("Question and initial answer are required.", nameof(request));
         }
 
+        if (request.Question.Length > ValidationInputLimits.MaximumQuestionCharacters)
+        {
+            throw new ArgumentException(
+                $"Question cannot exceed {ValidationInputLimits.MaximumQuestionCharacters} characters.",
+                nameof(request));
+        }
+
+        if (request.InitialAnswer.Length > ValidationInputLimits.MaximumInitialAnswerCharacters)
+        {
+            throw new ArgumentException(
+                $"Initial answer cannot exceed {ValidationInputLimits.MaximumInitialAnswerCharacters} characters.",
+                nameof(request));
+        }
+
         var validation = new DomainValidation
         {
             Id = Guid.NewGuid(),
@@ -111,6 +125,20 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             throw new ArgumentException("Inquiry and user answer are required.", nameof(request));
         }
 
+        if (request.Inquiry.Length > ValidationInputLimits.MaximumInquiryCharacters)
+        {
+            throw new ArgumentException(
+                $"Inquiry cannot exceed {ValidationInputLimits.MaximumInquiryCharacters} characters.",
+                nameof(request));
+        }
+
+        if (request.UserAnswer.Length > ValidationInputLimits.MaximumUserAnswerCharacters)
+        {
+            throw new ArgumentException(
+                $"User answer cannot exceed {ValidationInputLimits.MaximumUserAnswerCharacters} characters.",
+                nameof(request));
+        }
+
         var validation = await dbContext.Validations
             .Include(v => v.Steps)
             .FirstOrDefaultAsync(v => v.Id == validationId && v.UserId == currentUserId, cancellationToken);
@@ -118,6 +146,12 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
         if (validation is null)
         {
             throw new KeyNotFoundException("Validation not found.");
+        }
+
+        if (validation.Question.Length > ValidationInputLimits.MaximumQuestionCharacters
+            || validation.InitialAnswer.Length > ValidationInputLimits.MaximumInitialAnswerCharacters)
+        {
+            throw new ArgumentException("The stored question or initial answer exceeds the allowed length.");
         }
 
         if (validation.IsCompleted)
@@ -137,18 +171,39 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
             IsFinal = false
         };
 
-        dbContext.ValidationSteps.Add(step);
-
-        var inquiries = validation.Steps
+        var orderedSteps = validation.Steps
             .Append(step)
             .DistinctBy(existingStep => existingStep.Id)
             .OrderBy(existingStep => existingStep.CreatedAt)
+            .ToList();
+
+        var inquiries = orderedSteps
+            .Skip(1)
             .Select(existingStep => new VSScoreStepRequestInquiry
             {
                 Inquiry = existingStep.Inquiry,
                 UserAnswer = existingStep.UserAnswer
             })
             .ToList();
+
+        if (inquiries.Count > ValidationInputLimits.MaximumFollowUpQuestions)
+        {
+            throw new ArgumentException(
+                $"A validation cannot contain more than {ValidationInputLimits.MaximumFollowUpQuestions} follow-up questions.",
+                nameof(request));
+        }
+
+        var totalPromptInputCharacters =
+            (long)validation.Question.Length
+            + validation.InitialAnswer.Length
+            + inquiries.Sum(inquiry => (long)inquiry.Inquiry.Length + inquiry.UserAnswer.Length);
+
+        if (totalPromptInputCharacters > ValidationInputLimits.MaximumPromptInputCharacters)
+        {
+            throw new ArgumentException(
+                $"The validation prompt cannot exceed {ValidationInputLimits.MaximumPromptInputCharacters} characters.",
+                nameof(request));
+        }
 
         var aiRequest = new VSScoreStepRequest
         {
@@ -160,6 +215,7 @@ public sealed class BusinessServiceManager : IBusinessServiceManager
 
         var aiResponse = await validationScoringServiceClient.ScoreStepAsync(aiRequest, cancellationToken);
 
+        dbContext.ValidationSteps.Add(step);
         step.Score = aiResponse.Score;
         step.AiExplanation = aiResponse.AiExplanation;
         step.IsFinal = aiResponse.IsFinal;
