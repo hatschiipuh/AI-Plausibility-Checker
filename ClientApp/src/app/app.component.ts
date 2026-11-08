@@ -67,8 +67,6 @@ export class AppComponent {
   steps: ValidationStep[] = [];
   question = '';
   initialAnswer = '';
-  firstInquiry = '';
-  firstUserAnswer = '';
   lastScore?: number;
   lastExplanation?: string;
   nextInquiry?: string | null;
@@ -147,8 +145,6 @@ export class AppComponent {
           this.lastExplanation = undefined;
           this.nextInquiry = null;
           this.isCompleted = validation.isCompleted ?? false;
-          this.firstInquiry = '';
-          this.firstUserAnswer = '';
           this.validateStep(validation.id, request.question, request.initialAnswer);
           this.changeDetectorRef.markForCheck();
         },
@@ -160,20 +156,6 @@ export class AppComponent {
           this.changeDetectorRef.markForCheck();
         },
       });
-  }
-
-  onFirstValidate(): void {
-    if (!this.currentValidation?.id || this.isBusy) {
-      return;
-    }
-
-    const inquiry = this.firstInquiry.trim();
-    const userAnswer = this.firstUserAnswer.trim();
-    if (!inquiry || !userAnswer) {
-      return;
-    }
-
-    this.validateStep(this.currentValidation.id, inquiry, userAnswer);
   }
 
   private validateStep(validationId: string, inquiry: string, userAnswer: string): void {
@@ -357,8 +339,6 @@ export class AppComponent {
     this.steps = [];
     this.question = '';
     this.initialAnswer = '';
-    this.firstInquiry = '';
-    this.firstUserAnswer = '';
     this.lastScore = undefined;
     this.lastExplanation = undefined;
     this.nextInquiry = null;
