@@ -98,17 +98,23 @@ describe('App', () => {
   });
 
   it('prevents duplicate scoring requests while one is pending', () => {
-    const response = new Subject<ValidateStepResponse>();
-    validateStep.mockReturnValue(response.asObservable());
-    app.currentValidation = new Validation({ id: 'validation-id' });
-    app.firstInquiry = 'Follow-up question?';
-    app.firstUserAnswer = 'Answer';
+    const createResponse = new Subject<Validation>();
+    const validateResponse = new Subject<ValidateStepResponse>();
+    createValidation.mockReturnValue(createResponse.asObservable());
+    validateStep.mockReturnValue(validateResponse.asObservable());
+    app.question = 'Question?';
+    app.initialAnswer = 'Initial answer';
 
-    app.onFirstValidate();
-    app.onFirstValidate();
+    app.onCreateValidation();
+    createResponse.next(new Validation({ id: 'validation-id' }));
+    fixture.detectChanges();
+
+    // A second create request while the triggered scoring step is still pending
+    // must not fire another validateStep call.
+    app.onCreateValidation();
 
     expect(validateStep).toHaveBeenCalledTimes(1);
-    response.error(new Error('Scoring unavailable'));
+    validateResponse.error(new Error('Scoring unavailable'));
   });
 
   it('retains a failed validation step and allows retry', () => {
