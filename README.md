@@ -2,7 +2,11 @@
 
 ![CI](https://github.com/hatschiipuh/AI-Plausibility-Checker/actions/workflows/ci.yml/badge.svg)
 
-A web app for AI-assisted plausibility checking of answers: users provide a question and an answer, and the system iteratively evaluates via LLM (Perplexity) how plausible/consistent the answer is, returning a score and an explanation.
+A small end-to-end web application showcasing microservice architecture and LLM integration, built around a simple plausibility-checking use case.
+
+## About this project
+
+This is a **showcase project** demonstrating practical patterns for microservice architecture and LLM integration in a small, end-to-end system — authentication, service-to-service communication, Docker Compose orchestration, and calling an external LLM API (Perplexity) from a backend service. The use case: users provide a question and an answer, and the system iteratively evaluates via LLM (Perplexity) how plausible/consistent the answer is, returning a score and an explanation. The "plausibility checking" domain itself is intentionally simple; it mainly serves as a concrete, testable example to demonstrate these patterns.
 
 ## Architecture
 
