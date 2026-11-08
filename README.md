@@ -134,3 +134,7 @@ npm run generate-validationScoringService
 ```
 
 Prerequisite: `ValidationScoringService` must be running locally at `http://localhost:5041`. Both generated clients are source artifacts and must be regenerated with NSwag after their OpenAPI configuration changes.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
