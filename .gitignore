@@ -5,3 +5,7 @@ BusinessService/BusinessService.Infrastructure/business.db
 BusinessService/BusinessService.Infrastructure/business.db-shm
 BusinessService/BusinessService.Infrastructure/business.db-wal
 .env
+
+# Personal VS Code preferences (keep launch.json/tasks.json/extensions.json/mcp.json shared)
+**/.vscode/keybindings.json
+**/.vscode/settings.json

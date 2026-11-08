@@ -1,0 +1,28 @@
+ {
+   "version": "2.0.0",
+   "tasks": [
+     {
+       "label": "build ValidationScoringService",
+       "type": "process",
+       "command": "dotnet",
+       "args": [
+         "build",
+         "${workspaceFolder}/ValidationScoringService.Api/ValidationScoringService.Api.csproj"
+       ],
+       "problemMatcher": "$msCompile",
+       "group": "build"
+     },
+     {
+       "label": "test ValidationScoringService",
+       "type": "process",
+       "command": "dotnet",
+       "args": [
+         "test",
+         "${workspaceFolder}/ValidationScoringService.Api/ValidationScoringService.Api.csproj",
+         "--nologo"
+       ],
+       "problemMatcher": "$msCompile",
+       "group": "test"
+     }
+   ]
+ }
