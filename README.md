@@ -1,5 +1,7 @@
 # AI-Assisted Plausibility Checker
 
+![CI](https://github.com/hatschiipuh/AI-Plausibility-Checker/actions/workflows/ci.yml/badge.svg)
+
 A web app for AI-assisted plausibility checking of answers: users provide a question and an answer, and the system iteratively evaluates via LLM (Perplexity) how plausible/consistent the answer is, returning a score and an explanation.
 
 ## Architecture
