@@ -24,6 +24,8 @@ The repo consists of three independent sub-projects:
 ClientApp  --HTTP/JWT-->  BusinessService  --HTTP-->  ValidationScoringService  --HTTP-->  Perplexity API
 ```
 
+<img width="1536" height="1024" alt="SystemArchitecture" src="https://github.com/user-attachments/assets/f7e8d503-26cb-4032-beb1-d4ce7dc36ff1" />
+
 ## Prerequisites
 
 - .NET 10 SDK
